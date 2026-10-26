@@ -2,15 +2,21 @@
 import 'services/auth_service.dart';
 import 'services/trip_service.dart';
 
-void main() { runApp(const TorqRiderApp()); }
+void main() {
+  runApp(const TorqRiderApp());
+}
 
 class TorqRiderApp extends StatelessWidget {
   const TorqRiderApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'TORQ Rider', debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF059669)), useMaterial3: true),
+      title: 'TORQ Rider',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF059669)),
+        useMaterial3: true,
+      ),
       home: const LoginScreen(),
     );
   }
@@ -32,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     final token = await _authService.login(_emailController.text, _passwordController.text);
     setState(() => _isLoading = false);
+
     if (token != null && mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardScreen(token: token)));
     } else if (mounted) {
@@ -55,7 +62,16 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 16),
             TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()), obscureText: true),
             const SizedBox(height: 30),
-            _isLoading ? const CircularProgressIndicator() : ElevatedButton(onPressed: _handleLogin, child: const Text('Go Online')),
+            _isLoading 
+              ? const CircularProgressIndicator()
+              : SizedBox(
+                  width: double.infinity, height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white),
+                    onPressed: _handleLogin,
+                    child: const Text('Go Online', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
           ],
         ),
       ),
@@ -76,12 +92,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
 
   @override
-  void initState() { super.initState(); _fetchTrips(); }
+  void initState() {
+    super.initState();
+    _fetchTrips();
+  }
 
   void _fetchTrips() async {
     setState(() => _isLoading = true);
     final trips = await _tripService.getPendingTrips(widget.token);
-    setState(() { _trips = trips; _isLoading = false; });
+    setState(() {
+      _trips = trips;
+      _isLoading = false;
+    });
   }
 
   void _updateStatus(String tripId, String status) async {
@@ -96,37 +118,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Active Ride Requests'), backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white,
+        title: const Text('Active Ride Requests'),
+        backgroundColor: const Color(0xFF059669),
+        foregroundColor: Colors.white,
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchTrips)],
       ),
-      body: _isLoading ? const Center(child: CircularProgressIndicator()) : _trips.isEmpty ? const Center(child: Text('No trips.')) : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _trips.length,
-        itemBuilder: (context, index) {
-          final trip = _trips[index];
-          final status = trip['status'];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Trip #${trip['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold)), Chip(label: Text(status))]),
-                  const SizedBox(height: 8),
-                  Text('Pickup: ${trip['pickupLat']}, ${trip['pickupLng']}'),
-                  Text('Dropoff: ${trip['dropoffLat']}, ${trip['dropoffLng']}'),
-                  const SizedBox(height: 16),
-                  if (status == 'REQUESTED') SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => _updateStatus(trip['id'], 'ACCEPTED'), child: const Text('Accept Ride'))),
-                  if (status == 'ACCEPTED') SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), onPressed: () => _updateStatus(trip['id'], 'ARRIVED'), child: const Text('Arrived at Pickup'))),
-                  if (status == 'ARRIVED') SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue), onPressed: () => _updateStatus(trip['id'], 'IN_PROGRESS'), child: const Text('Start Trip'))),
-                  if (status == 'IN_PROGRESS') SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: () => _updateStatus(trip['id'], 'COMPLETED'), child: const Text('Complete Trip'))),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _trips.isEmpty
+              ? const Center(child: Text('No pending trips right now.'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _trips.length,
+                  itemBuilder: (context, index) {
+                    final trip = _trips[index];
+                    final status = trip['status'];
+                    final fare = double.tryParse(trip['estimatedFare']?.toString() ?? '0.0') ?? 0.0;
+                    
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Trip #${trip['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                Chip(label: Text(status, style: const TextStyle(fontSize: 12))),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.my_location, color: Colors.blue, size: 16),
+                                const SizedBox(width: 8),
+                                Text('${trip['pickupLat']}, ${trip['pickupLng']}'),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, color: Colors.red, size: 16),
+                                const SizedBox(width: 8),
+                                Text('${trip['dropoffLat']}, ${trip['dropoffLng']}'),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Estimated Fare:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text('KES ${fare.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // DYNAMIC BUTTONS
+                            if (status == 'REQUESTED')
+                              SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'ACCEPTED'), child: const Text('Accept Ride'))),
+                            if (status == 'ACCEPTED')
+                              SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'ARRIVED'), child: const Text('Arrived at Pickup'))),
+                            if (status == 'ARRIVED')
+                              SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'IN_PROGRESS'), child: const Text('Start Trip'))),
+                            if (status == 'IN_PROGRESS')
+                              SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'COMPLETED'), child: const Text('Complete Trip'))),
+                            if (status == 'COMPLETED')
+                              const Center(child: Text('✅ Trip Completed', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16))),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }
