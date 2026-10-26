@@ -97,7 +97,7 @@ class _MainNavigationState extends State<MainNavigation> {
       const TripsTab(),
       const EarningsTab(),
       const InboxTab(),
-      const AccountTab(),
+      AccountTab(token: widget.token),
     ];
 
     return Scaffold(
@@ -210,4 +210,58 @@ class _HomeTabState extends State<HomeTab> {
 class TripsTab extends StatelessWidget { const TripsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
 class EarningsTab extends StatelessWidget { const EarningsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Earnings & Wallet'))); } }
 class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
-class AccountTab extends StatelessWidget { const AccountTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Driver Profile'))); } }
+
+class AccountTab extends StatefulWidget {
+  final String token;
+  const AccountTab({super.key, required this.token});
+  @override
+  State<AccountTab> createState() => _AccountTabState();
+}
+
+class _AccountTabState extends State<AccountTab> {
+  final _nameController = TextEditingController();
+  final _bikeController = TextEditingController();
+  final _emergencyController = TextEditingController();
+  final _tripService = TripService();
+  bool _isSaving = false;
+
+  void _saveProfile() async {
+    setState(() => _isSaving = true);
+    final success = await _tripService.updateRiderProfile(
+      widget.token,
+      _nameController.text,
+      _bikeController.text,
+      _emergencyController.text,
+    );
+    setState(() => _isSaving = false);
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved successfully!'), backgroundColor: Colors.green));
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save profile'), backgroundColor: Colors.red));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Driver Profile'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const CircleAvatar(radius: 50, backgroundColor: Color(0xFF0B121B), child: Icon(Icons.person, size: 50, color: Color(0xFFFFBD19))),
+          const SizedBox(height: 16),
+          const Text('Complete your profile to start accepting rides.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 32),
+          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline))),
+          const SizedBox(height: 16),
+          TextField(controller: _bikeController, decoration: const InputDecoration(labelText: 'Motorcycle Registration', prefixIcon: Icon(Icons.two_wheeler))),
+          const SizedBox(height: 16),
+          TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact', prefixIcon: Icon(Icons.phone))),
+          const SizedBox(height: 32),
+          _isSaving ? const Center(child: CircularProgressIndicator()) : ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black), onPressed: _saveProfile, child: const Text('Save Profile')),
+        ],
+      ),
+    );
+  }
+}
