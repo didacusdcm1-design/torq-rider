@@ -23,21 +23,6 @@ class TorqRiderApp extends StatelessWidget {
         ),
         useMaterial3: true,
         fontFamily: 'Inter',
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFBD19),
-            foregroundColor: const Color(0xFF0B121B),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFBD19), width: 2)),
-        ),
       ),
       home: const LoginScreen(),
     );
@@ -82,11 +67,11 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
               const Text('TORQ Rider', textAlign: TextAlign.center, style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF0B121B))),
               const SizedBox(height: 40),
-              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email))),
+              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
               const SizedBox(height: 16),
-              TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)), obscureText: true),
+              TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
               const SizedBox(height: 30),
-              _isLoading ? const Center(child: CircularProgressIndicator()) : ElevatedButton(onPressed: _handleLogin, child: const Text('Go Online')),
+              _isLoading ? const Center(child: CircularProgressIndicator()) : ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black), onPressed: _handleLogin, child: const Text('Go Online')),
             ],
           ),
         ),
@@ -151,13 +136,6 @@ class _HomeTabState extends State<HomeTab> {
   void initState() {
     super.initState();
     _fetchTrips();
-    _tripService.connectWebSocket(() { _fetchTrips(); });
-  }
-
-  @override
-  void dispose() {
-    _tripService.socket.disconnect();
-    super.dispose();
   }
 
   void _fetchTrips() async {
@@ -186,7 +164,7 @@ class _HomeTabState extends State<HomeTab> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _trips.isEmpty
-              ? const Center(child: Text('Waiting for ride requests...', style: TextStyle(color: Colors.grey)))
+              ? const Center(child: Text('Waiting for ride requests...'))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _trips.length,
@@ -196,41 +174,23 @@ class _HomeTabState extends State<HomeTab> {
                     final fare = double.tryParse(trip['estimatedFare']?.toString() ?? '0.0') ?? 0.0;
                     
                     return Card(
-                      elevation: 0,
+                      elevation: 2,
                       margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade300)),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Ride Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(color: const Color(0xFFFFBD19).withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                                  child: Text(status, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            Row(children: [const Icon(Icons.circle, color: Colors.blue, size: 12), const SizedBox(width: 8), Text('Pickup: ${trip['pickupLat']}, ${trip['pickupLng']}')]),
+                            Text('Trip #${trip['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                             const SizedBox(height: 8),
-                            Row(children: [const Icon(Icons.location_on, color: Colors.red, size: 16), const SizedBox(width: 8), Text('Dropoff: ${trip['dropoffLat']}, ${trip['dropoffLng']}')]),
+                            Text('Pickup: ${trip['pickupLat']}, ${trip['pickupLng']}'),
+                            Text('Dropoff: ${trip['dropoffLat']}, ${trip['dropoffLng']}'),
                             const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Earnings:', style: TextStyle(color: Colors.grey.shade600)),
-                                Text('KSh ${fare.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
-                              ],
-                            ),
+                            Text('Earnings: KSh ${fare.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16)),
                             const SizedBox(height: 16),
                             
                             if (status == 'REQUESTED')
-                              SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => _updateStatus(trip['id'], 'ACCEPTED'), child: const Text('Accept Ride'))),
+                              SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'ACCEPTED'), child: const Text('Accept Ride'))),
                             if (status == 'ACCEPTED')
                               SizedBox(width: double.infinity, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white), onPressed: () => _updateStatus(trip['id'], 'ARRIVED'), child: const Text('Arrived at Pickup'))),
                             if (status == 'ARRIVED')
