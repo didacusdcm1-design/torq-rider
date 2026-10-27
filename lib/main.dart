@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'services/auth_service.dart';
 import 'services/trip_service.dart';
 
@@ -297,6 +298,20 @@ class _AccountTabState extends State<AccountTab> {
     }
   }
 
+  Future<void> _pickFile(String label, Function(String) onChanged) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        onChanged(image.name);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -378,12 +393,13 @@ class _AccountTabState extends State<AccountTab> {
       child: ListTile(
         leading: const Icon(Icons.upload_file, color: Color(0xFFFFBD19)),
         title: Text(label),
-        subtitle: Text(value.isEmpty ? 'Not uploaded' : value, style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green)),
+        subtitle: Text(
+          value.isEmpty ? 'Not uploaded' : value, 
+          style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green, fontWeight: FontWeight.bold)
+        ),
         trailing: ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
-          onPressed: () {
-            onChanged('${label.toLowerCase().replaceAll(' ', '_')}.jpg');
-          },
+          onPressed: () => _pickFile(label, onChanged),
           child: const Text('Upload'),
         ),
       ),
