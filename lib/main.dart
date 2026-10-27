@@ -240,24 +240,32 @@ class AccountTab extends StatefulWidget {
 }
 
 class _AccountTabState extends State<AccountTab> {
-  final _nameController = TextEditingController();
-  final _bikeController = TextEditingController();
-  final _emergencyController = TextEditingController();
+  int _currentStep = 0;
   final _tripService = TripService();
   bool _isSaving = false;
 
-  void _saveProfile() async {
+  final _nameController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _idController = TextEditingController();
+  final _emergencyController = TextEditingController();
+
+  final _regController = TextEditingController();
+  final _makeController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _insuranceController = TextEditingController();
+
+  void _submitProfile() async {
     setState(() => _isSaving = true);
-    final success = await _tripService.updateRiderProfile(
+    final success = await _tripService.updateFullProfile(
       widget.token,
-      _nameController.text,
-      _bikeController.text,
-      _emergencyController.text,
+      _nameController.text, _dobController.text, _idController.text, _emergencyController.text,
+      _regController.text, _makeController.text, _modelController.text, _insuranceController.text
     );
     setState(() => _isSaving = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile saved successfully!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted for review!'), backgroundColor: Colors.green));
+      setState(() => _currentStep = 0);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save profile'), backgroundColor: Colors.red));
     }
@@ -266,24 +274,64 @@ class _AccountTabState extends State<AccountTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Profile'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const CircleAvatar(radius: 50, backgroundColor: Color(0xFF0B121B), child: Icon(Icons.person, size: 50, color: Color(0xFFFFBD19))),
-          const SizedBox(height: 16),
-          const Text('Complete your profile to start accepting rides.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 32),
-          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline))),
-          const SizedBox(height: 16),
-          TextField(controller: _bikeController, decoration: const InputDecoration(labelText: 'Motorcycle Registration', prefixIcon: Icon(Icons.two_wheeler))),
-          const SizedBox(height: 16),
-          TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact', prefixIcon: Icon(Icons.phone))),
-          const SizedBox(height: 32),
-          _isSaving ? const Center(child: CircularProgressIndicator()) : ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black), onPressed: _saveProfile, child: const Text('Save Profile')),
+      appBar: AppBar(title: const Text('Driver Verification'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
+      body: Stepper(
+        currentStep: _currentStep,
+        onStepContinue: () {
+          if (_currentStep < 2) {
+            setState(() => _currentStep += 1);
+          } else {
+            _submitProfile();
+          }
+        },
+        onStepCancel: () {
+          if (_currentStep > 0) setState(() => _currentStep -= 1);
+        },
+        steps: [
+          Step(
+            title: const Text('Personal Details'),
+            isActive: _currentStep >= 0,
+            content: Column(
+              children: [
+                TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name')),
+                const SizedBox(height: 10),
+                TextField(controller: _dobController, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)')),
+                const SizedBox(height: 10),
+                TextField(controller: _idController, decoration: const InputDecoration(labelText: 'National ID Number')),
+                const SizedBox(height: 10),
+                TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact')),
+              ],
+            ),
+          ),
+          Step(
+            title: const Text('Motorcycle Details'),
+            isActive: _currentStep >= 1,
+            content: Column(
+              children: [
+                TextField(controller: _regController, decoration: const InputDecoration(labelText: 'Registration Number (e.g., KMQ 482X)')),
+                const SizedBox(height: 10),
+                TextField(controller: _makeController, decoration: const InputDecoration(labelText: 'Make (e.g., Bajaj)')),
+                const SizedBox(height: 10),
+                TextField(controller: _modelController, decoration: const InputDecoration(labelText: 'Model (e.g., Boxer 150)')),
+                const SizedBox(height: 10),
+                TextField(controller: _insuranceController, decoration: const InputDecoration(labelText: 'Insurance Expiry (YYYY-MM-DD)')),
+              ],
+            ),
+          ),
+          Step(
+            title: const Text('Review & Submit'),
+            isActive: _currentStep >= 2,
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('By submitting, you agree to TORQ\'s terms of service and confirm all details are correct.', style: TextStyle(color: Colors.grey)),
+                const SizedBox(height: 20),
+                _isSaving ? const Center(child: CircularProgressIndicator()) : const Text('Ready to submit.'),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
