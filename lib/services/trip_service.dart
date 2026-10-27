@@ -41,12 +41,25 @@ class TripService {
     try {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/trips/upload'));
       request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: fileName));
-      
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
-      
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(responseData)['url'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getWallet(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/trips/rider/wallet'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
       }
       return null;
     } catch (e) {
@@ -65,19 +78,5 @@ class TripService {
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
-  }
-  Future<Map<String, dynamic>?> getWallet(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/trips/rider/wallet'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
   }
 }
