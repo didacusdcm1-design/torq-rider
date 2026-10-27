@@ -47,9 +47,7 @@ class TripService {
         return jsonDecode(responseData)['url'];
       }
       return null;
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
   Future<Map<String, dynamic>?> getWallet(String token) async {
@@ -60,13 +58,35 @@ class TripService {
     } catch (e) { return null; }
   }
 
-  // NEW: Get Rider Profile to check for rejection
   Future<Map<String, dynamic>?> getRiderProfile(String token) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/trips/rider/profile'), headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) return jsonDecode(response.body);
       return null;
     } catch (e) { return null; }
+  }
+
+  Future<List<dynamic>> getRiderHistory(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/history'), headers: {'Authorization': 'Bearer $token'});
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  Future<List<dynamic>> getNotifications(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/notifications'), headers: {'Authorization': 'Bearer $token'});
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  Future<bool> requestPayout(String token) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/trips/rider/payout'), headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'});
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) { return false; }
   }
 
   Future<bool> updateFullProfile(String token, String fullName, String dob, String idNumber, String emergencyContact, String reg, String make, String model, String insurance, String idDoc, String licenseDoc, String insuranceDoc, String selfieDoc) async {
@@ -80,15 +100,5 @@ class TripService {
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
-  }
-  Future<List<dynamic>> getRiderHistory(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/trips/rider/history'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) { return []; }
   }
 }
