@@ -30,7 +30,7 @@ class TripService {
     return response.statusCode == 200;
   }
 
-  Future<bool> updateFullProfile(String token, String fullName, String dob, String idNumber, String emergencyContact, String reg, String make, String model, String insurance) async {
+  Future<bool> updateFullProfile(String token, String fullName, String dob, String idNumber, String emergencyContact, String reg, String make, String model, String insurance, String idDoc, String licenseDoc, String insuranceDoc, String selfieDoc) async {
     final response = await http.post(
       Uri.parse('$baseUrl/trips/rider/full-profile'),
       headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
@@ -43,6 +43,10 @@ class TripService {
         'motorcycleMake': make,
         'motorcycleModel': model,
         'insuranceExpiry': insurance,
+        'idDocumentUrl': idDoc,
+        'licenseDocumentUrl': licenseDoc,
+        'insuranceDocumentUrl': insuranceDoc,
+        'selfieUrl': selfieDoc,
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
