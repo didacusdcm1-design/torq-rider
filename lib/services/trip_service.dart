@@ -66,4 +66,18 @@ class TripService {
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
+  Future<Map<String, dynamic>?> getWallet(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/trips/rider/wallet'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

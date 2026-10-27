@@ -149,7 +149,7 @@ class _MainNavigationState extends State<MainNavigation> {
     final screens = [
       HomeTab(token: widget.token),
       const TripsTab(),
-      const EarningsTab(),
+      EarningsTab(token: widget.token),
       const InboxTab(),
       AccountTab(token: widget.token),
     ];
@@ -271,7 +271,83 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 class TripsTab extends StatelessWidget { const TripsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
-class EarningsTab extends StatelessWidget { const EarningsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Earnings & Wallet'))); } }
+class EarningsTab extends StatefulWidget {
+  final String token;
+  const EarningsTab({super.key, required this.token});
+  @override
+  State<EarningsTab> createState() => _EarningsTabState();
+}
+
+class _EarningsTabState extends State<EarningsTab> {
+  final _tripService = TripService();
+  Map<String, dynamic>? _wallet;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWallet();
+  }
+
+  void _loadWallet() async {
+    setState(() => _isLoading = true);
+    final wallet = await _tripService.getWallet(widget.token);
+    setState(() {
+      _wallet = wallet;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Earnings & Wallet'),
+        backgroundColor: const Color(0xFF0B121B),
+        foregroundColor: Colors.white,
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadWallet)],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    color: const Color(0xFF0B121B),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        children: [
+                          const Text('Available Balance', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                          const SizedBox(height: 10),
+                          Text(
+                            'KSh ${(_wallet?['balance'] ?? 0).toStringAsFixed(2)}',
+                            style: const TextStyle(color: Color(0xFFFFBD19), fontSize: 36, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.pending_actions, color: Colors.blue),
+                      title: const Text('Pending Earnings'),
+                      trailing: Text(
+                        'KSh ${(_wallet?['pendingEarnings'] ?? 0).toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
 class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
 
 class AccountTab extends StatefulWidget {
@@ -449,3 +525,4 @@ class _AccountTabState extends State<AccountTab> {
     );
   }
 }
+
