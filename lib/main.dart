@@ -1,6 +1,5 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'services/auth_service.dart';
 import 'services/trip_service.dart';
 
@@ -332,13 +331,18 @@ class _AccountTabState extends State<AccountTab> {
   }
 
   Future<void> _pickFile(String label, Function(String) onChanged) async {
-    final ImagePicker picker = ImagePicker();
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
         setState(() => _isSaving = true);
-        File file = File(image.path);
-        String? url = await _tripService.uploadFile(file);
+        String? url = await _tripService.uploadFile(
+          result.files.single.bytes!, 
+          result.files.single.name
+        );
         setState(() => _isSaving = false);
         
         if (url != null) {

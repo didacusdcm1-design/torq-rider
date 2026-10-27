@@ -1,5 +1,5 @@
 ﻿import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -37,11 +37,10 @@ class TripService {
     return error['message'] ?? 'Failed to accept trip';
   }
 
-  // NEW: Upload File to Backend
-  Future<String?> uploadFile(File file) async {
+  Future<String?> uploadFile(Uint8List fileBytes, String fileName) async {
     try {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/trips/upload'));
-      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: fileName));
       
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
