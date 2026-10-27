@@ -37,30 +37,65 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLogin = true;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
 
-  void _handleSubmit() async {
+  void _showRegisterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Register as Rider'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email Address')),
+              const SizedBox(height: 10),
+              TextField(controller: _phoneController, decoration: const InputDecoration(labelText: 'Phone Number (e.g., 0712345678)')),
+              const SizedBox(height: 10),
+              TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black),
+              onPressed: () async {
+                Navigator.pop(context);
+                setState(() => _isLoading = true);
+                String? token = await _authService.register(_emailController.text, _phoneController.text, _passwordController.text);
+                setState(() => _isLoading = false);
+
+                if (token != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account created! Please complete your profile to get approved.'), backgroundColor: Colors.green));
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainNavigation(token: token!)));
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registration Failed'), backgroundColor: Colors.red));
+                }
+              },
+              child: const Text('Create Account'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleLogin() async {
     setState(() => _isLoading = true);
-    String? token;
-
-    if (_isLogin) {
-      token = await _authService.login(_emailController.text, _passwordController.text);
-    } else {
-      token = await _authService.register(_emailController.text, _passwordController.text);
-    }
-
+    String? token = await _authService.login(_emailController.text, _passwordController.text);
     setState(() => _isLoading = false);
 
     if (token != null && mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainNavigation(token: token!)));
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isLogin ? 'Login Failed' : 'Registration Failed'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Failed'), backgroundColor: Colors.red));
     }
   }
 
@@ -86,13 +121,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black),
-                    onPressed: _handleSubmit, 
-                    child: Text(_isLogin ? 'Go Online' : 'Register as Rider', style: const TextStyle(fontWeight: FontWeight.bold))
+                    onPressed: _handleLogin, 
+                    child: const Text('Login', style: TextStyle(fontWeight: FontWeight.bold))
                   ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => setState(() => _isLogin = !_isLogin),
-                child: Text(_isLogin ? "Don't have an account? Register here" : "Already have an account? Login here", style: const TextStyle(color: Color(0xFF0B121B))),
+                onPressed: _showRegisterDialog,
+                child: const Text("Don't have an account? Register here", style: TextStyle(color: Color(0xFF0B121B))),
               )
             ],
           ),
@@ -262,20 +297,11 @@ class _AccountTabState extends State<AccountTab> {
 
   bool _validateStep() {
     if (_currentStep == 0) {
-      return _nameController.text.isNotEmpty &&
-             _dobController.text.isNotEmpty &&
-             _idController.text.isNotEmpty &&
-             _emergencyController.text.isNotEmpty;
+      return _nameController.text.isNotEmpty && _dobController.text.isNotEmpty && _idController.text.isNotEmpty && _emergencyController.text.isNotEmpty;
     } else if (_currentStep == 1) {
-      return _regController.text.isNotEmpty &&
-             _makeController.text.isNotEmpty &&
-             _modelController.text.isNotEmpty &&
-             _insuranceController.text.isNotEmpty;
+      return _regController.text.isNotEmpty && _makeController.text.isNotEmpty && _modelController.text.isNotEmpty && _insuranceController.text.isNotEmpty;
     } else if (_currentStep == 2) {
-      return _idDoc.isNotEmpty &&
-             _licenseDoc.isNotEmpty &&
-             _insuranceDoc.isNotEmpty &&
-             _selfieDoc.isNotEmpty;
+      return _idDoc.isNotEmpty && _licenseDoc.isNotEmpty && _insuranceDoc.isNotEmpty && _selfieDoc.isNotEmpty;
     }
     return true;
   }
@@ -393,10 +419,7 @@ class _AccountTabState extends State<AccountTab> {
       child: ListTile(
         leading: const Icon(Icons.upload_file, color: Color(0xFFFFBD19)),
         title: Text(label),
-        subtitle: Text(
-          value.isEmpty ? 'Not uploaded' : value, 
-          style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green, fontWeight: FontWeight.bold)
-        ),
+        subtitle: Text(value.isEmpty ? 'Not uploaded' : value, style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green)),
         trailing: ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
           onPressed: () => _pickFile(label, onChanged),
