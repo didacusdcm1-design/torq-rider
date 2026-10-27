@@ -61,10 +61,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black),
               onPressed: () async {
@@ -204,20 +201,17 @@ class _HomeTabState extends State<HomeTab> {
 
   void _updateStatus(String tripId, String status) async {
     String? errorMessage;
-
+    
     if (status == 'ACCEPTED') {
-      // Use the new strict acceptTrip method
       errorMessage = await _tripService.acceptTrip(widget.token, tripId);
     } else {
       errorMessage = await _tripService.updateStatus(widget.token, tripId, status);
     }
 
     if (errorMessage == null && mounted) {
-      // Success
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Status updated to $status'), backgroundColor: Colors.green));
       _fetchTrips();
     } else if (mounted) {
-      // Show the error from the backend (e.g., "Account pending approval")
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage ?? 'Error'), backgroundColor: Colors.red));
     }
   }
@@ -337,12 +331,12 @@ class _AccountTabState extends State<AccountTab> {
     }
   }
 
-    Future<void> _pickFile(String label, Function(String) onChanged) async {
+  Future<void> _pickFile(String label, Function(String) onChanged) async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        setState(() => _isSaving = true); // Show loading while uploading
+        setState(() => _isSaving = true);
         File file = File(image.path);
         String? url = await _tripService.uploadFile(file);
         setState(() => _isSaving = false);
@@ -357,12 +351,6 @@ class _AccountTabState extends State<AccountTab> {
     } catch (e) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick image: $e'), backgroundColor: Colors.red));
-    }
-  }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e'), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -447,7 +435,7 @@ class _AccountTabState extends State<AccountTab> {
       child: ListTile(
         leading: const Icon(Icons.upload_file, color: Color(0xFFFFBD19)),
         title: Text(label),
-        subtitle: Text(value.isEmpty ? 'Not uploaded' : value, style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green)),
+        subtitle: Text(value.isEmpty ? 'Not uploaded' : 'Uploaded successfully', style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
         trailing: ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
           onPressed: () => _pickFile(label, onChanged),
