@@ -348,8 +348,7 @@ class _TripsTabState extends State<TripsTab> {
                 ),
     );
   }
-}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
-class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
+}
 
 class EarningsTab extends StatefulWidget {
   final String token;
@@ -427,6 +426,8 @@ class _EarningsTabState extends State<EarningsTab> {
     );
   }
 }
+
+class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
 
 class AccountTab extends StatefulWidget {
   final String token;
