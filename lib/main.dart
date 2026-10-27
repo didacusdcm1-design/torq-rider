@@ -242,6 +242,7 @@ class AccountTab extends StatefulWidget {
 class _AccountTabState extends State<AccountTab> {
   int _currentStep = 0;
   final _tripService = TripService();
+  final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
 
   final _nameController = TextEditingController();
@@ -254,12 +255,22 @@ class _AccountTabState extends State<AccountTab> {
   final _modelController = TextEditingController();
   final _insuranceController = TextEditingController();
 
+  String _idDoc = "";
+  String _licenseDoc = "";
+  String _insuranceDoc = "";
+  String _selfieDoc = "";
+
   void _submitProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields'), backgroundColor: Colors.red));
+      return;
+    }
     setState(() => _isSaving = true);
     final success = await _tripService.updateFullProfile(
       widget.token,
       _nameController.text, _dobController.text, _idController.text, _emergencyController.text,
-      _regController.text, _makeController.text, _modelController.text, _insuranceController.text
+      _regController.text, _makeController.text, _modelController.text, _insuranceController.text,
+      _idDoc, _licenseDoc, _insuranceDoc, _selfieDoc
     );
     setState(() => _isSaving = false);
 
@@ -275,62 +286,94 @@ class _AccountTabState extends State<AccountTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Driver Verification'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
-      body: Stepper(
-        currentStep: _currentStep,
-        onStepContinue: () {
-          if (_currentStep < 2) {
-            setState(() => _currentStep += 1);
-          } else {
-            _submitProfile();
-          }
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) setState(() => _currentStep -= 1);
-        },
-        steps: [
-          Step(
-            title: const Text('Personal Details'),
-            isActive: _currentStep >= 0,
-            content: Column(
-              children: [
-                TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name')),
-                const SizedBox(height: 10),
-                TextField(controller: _dobController, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)')),
-                const SizedBox(height: 10),
-                TextField(controller: _idController, decoration: const InputDecoration(labelText: 'National ID Number')),
-                const SizedBox(height: 10),
-                TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact')),
-              ],
+      body: Form(
+        key: _formKey,
+        child: Stepper(
+          currentStep: _currentStep,
+          onStepContinue: () {
+            if (_formKey.currentState!.validate()) {
+              if (_currentStep < 2) {
+                setState(() => _currentStep += 1);
+              } else {
+                _submitProfile();
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields'), backgroundColor: Colors.red));
+            }
+          },
+          onStepCancel: () {
+            if (_currentStep > 0) setState(() => _currentStep -= 1);
+          },
+          steps: [
+            Step(
+              title: const Text('Personal Details'),
+              isActive: _currentStep >= 0,
+              content: Column(
+                children: [
+                  TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _dobController, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD) *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _idController, decoration: const InputDecoration(labelText: 'National ID Number *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                ],
+              ),
             ),
-          ),
-          Step(
-            title: const Text('Motorcycle Details'),
-            isActive: _currentStep >= 1,
-            content: Column(
-              children: [
-                TextField(controller: _regController, decoration: const InputDecoration(labelText: 'Registration Number (e.g., KMQ 482X)')),
-                const SizedBox(height: 10),
-                TextField(controller: _makeController, decoration: const InputDecoration(labelText: 'Make (e.g., Bajaj)')),
-                const SizedBox(height: 10),
-                TextField(controller: _modelController, decoration: const InputDecoration(labelText: 'Model (e.g., Boxer 150)')),
-                const SizedBox(height: 10),
-                TextField(controller: _insuranceController, decoration: const InputDecoration(labelText: 'Insurance Expiry (YYYY-MM-DD)')),
-              ],
+            Step(
+              title: const Text('Motorcycle Details'),
+              isActive: _currentStep >= 1,
+              content: Column(
+                children: [
+                  TextFormField(controller: _regController, decoration: const InputDecoration(labelText: 'Registration Number *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _makeController, decoration: const InputDecoration(labelText: 'Make *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _modelController, decoration: const InputDecoration(labelText: 'Model *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 10),
+                  TextFormField(controller: _insuranceController, decoration: const InputDecoration(labelText: 'Insurance Expiry *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                ],
+              ),
             ),
-          ),
-          Step(
-            title: const Text('Review & Submit'),
-            isActive: _currentStep >= 2,
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('By submitting, you agree to TORQ\'s terms of service and confirm all details are correct.', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 20),
-                _isSaving ? const Center(child: CircularProgressIndicator()) : const Text('Ready to submit.'),
-              ],
+            Step(
+              title: const Text('Documents & Review'),
+              isActive: _currentStep >= 2,
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Upload Documents *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  _buildUploadTile('National ID', _idDoc, (val) => setState(() => _idDoc = val)),
+                  _buildUploadTile('Driver License', _licenseDoc, (val) => setState(() => _licenseDoc = val)),
+                  _buildUploadTile('Insurance Certificate', _insuranceDoc, (val) => setState(() => _insuranceDoc = val)),
+                  _buildUploadTile('Selfie', _selfieDoc, (val) => setState(() => _selfieDoc = val)),
+                  const SizedBox(height: 20),
+                  const Text('By submitting, you agree to TORQ\'s terms of service.', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 20),
+                  _isSaving ? const Center(child: CircularProgressIndicator()) : const Text('Ready to submit.'),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadTile(String label, String value, Function(String) onChanged) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: const Icon(Icons.upload_file, color: Color(0xFFFFBD19)),
+        title: Text(label),
+        subtitle: Text(value.isEmpty ? 'Not uploaded' : value, style: TextStyle(color: value.isEmpty ? Colors.red : Colors.green)),
+        trailing: ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
+          onPressed: () {
+            onChanged('${label.toLowerCase().replaceAll(' ', '_')}.jpg');
+          },
+          child: const Text('Upload'),
+        ),
       ),
     );
   }
