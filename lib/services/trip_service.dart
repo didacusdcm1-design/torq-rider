@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -80,5 +80,15 @@ class TripService {
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+  Future<List<dynamic>> getRiderHistory(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/trips/rider/history'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
   }
 }

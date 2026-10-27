@@ -148,7 +148,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     final screens = [
       HomeTab(token: widget.token),
-      const TripsTab(),
+      TripsTab(token: widget.token),
       EarningsTab(token: widget.token),
       const InboxTab(),
       AccountTab(token: widget.token),
@@ -270,7 +270,85 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-class TripsTab extends StatelessWidget { const TripsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
+class TripsTab extends StatefulWidget {
+  final String token;
+  const TripsTab({super.key, required this.token});
+  @override
+  State<TripsTab> createState() => _TripsTabState();
+}
+
+class _TripsTabState extends State<TripsTab> {
+  final _tripService = TripService();
+  List<dynamic> _history = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  void _loadHistory() async {
+    setState(() => _isLoading = true);
+    final history = await _tripService.getRiderHistory(widget.token);
+    setState(() {
+      _history = history;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Trip History'),
+        backgroundColor: const Color(0xFF0B121B),
+        foregroundColor: Colors.white,
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadHistory)],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _history.isEmpty
+              ? const Center(child: Text('No completed trips yet.'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _history.length,
+                  itemBuilder: (context, index) {
+                    final trip = _history[index];
+                    final fare = double.tryParse(trip['estimatedFare']?.toString() ?? '0.0') ?? 0.0;
+                    final date = DateTime.parse(trip['createdAt']).toLocal();
+                    
+                    return Card(
+                      elevation: 0,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle),
+                          child: const Icon(Icons.check_circle, color: Colors.green),
+                        ),
+                        title: Text('Trip #${trip['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text('Customer: ${trip['customer']?.email ?? 'N/A'}', style: const TextStyle(fontSize: 12)),
+                            Text('${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                        trailing: Text('KSh ${fare.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
 class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
 
 class EarningsTab extends StatefulWidget {
