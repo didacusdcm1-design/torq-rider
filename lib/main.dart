@@ -55,7 +55,7 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = false);
 
     if (token != null && mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainNavigation(token: token)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainNavigation(token: token!)));
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_isLogin ? 'Login Failed' : 'Registration Failed'), backgroundColor: Colors.red),
@@ -286,3 +286,4 @@ class _AccountTabState extends State<AccountTab> {
     );
   }
 }
+
