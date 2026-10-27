@@ -6,18 +6,13 @@ class TripService {
   final String baseUrl = 'https://torq-backend.onrender.com';
   late IO.Socket socket;
 
-  void connectWebSocket(Function onNewTrip) {
+  void connectWebSocket(Function(dynamic) onTripUpdate) {
     socket = IO.io(baseUrl, IO.OptionBuilder()
       .setTransports(['websocket'])
       .disableAutoConnect()
       .build());
-      
     socket.connect();
-    
-    socket.on('newTrip', (data) {
-      print('New Trip Request Received!');
-      onNewTrip();
-    });
+    socket.on('tripUpdate', (data) => onTripUpdate(data));
   }
 
   Future<List<dynamic>> getPendingTrips(String token) async {
@@ -35,14 +30,19 @@ class TripService {
     return response.statusCode == 200;
   }
 
-  Future<bool> updateRiderProfile(String token, String fullName, String motorcycleReg, String emergencyContact) async {
+  Future<bool> updateFullProfile(String token, String fullName, String dob, String idNumber, String emergencyContact, String reg, String make, String model, String insurance) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/trips/rider/profile'),
+      Uri.parse('$baseUrl/trips/rider/full-profile'),
       headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
       body: jsonEncode({
         'fullName': fullName,
-        'motorcycleReg': motorcycleReg,
+        'dateOfBirth': dob,
+        'nationalIdNumber': idNumber,
         'emergencyContact': emergencyContact,
+        'motorcycleReg': reg,
+        'motorcycleMake': make,
+        'motorcycleModel': model,
+        'insuranceExpiry': insurance,
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
