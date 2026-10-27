@@ -24,32 +24,42 @@ class TorqRiderApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      home: const LoginScreen(),
+      home: const AuthScreen(),
     );
   }
 }
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class AuthScreen extends StatefulWidget {
+  const AuthScreen({super.key});
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: 'rider@torq.com');
-  final _passwordController = TextEditingController(text: 'Test@123');
+class _AuthScreenState extends State<AuthScreen> {
+  bool _isLogin = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
 
-  void _handleLogin() async {
+  void _handleSubmit() async {
     setState(() => _isLoading = true);
-    final token = await _authService.login(_emailController.text, _passwordController.text);
+    String? token;
+
+    if (_isLogin) {
+      token = await _authService.login(_emailController.text, _passwordController.text);
+    } else {
+      token = await _authService.register(_emailController.text, _passwordController.text);
+    }
+
     setState(() => _isLoading = false);
 
     if (token != null && mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainNavigation(token: token)));
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Failed'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isLogin ? 'Login Failed' : 'Registration Failed'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -71,7 +81,18 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
               const SizedBox(height: 30),
-              _isLoading ? const Center(child: CircularProgressIndicator()) : ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black), onPressed: _handleLogin, child: const Text('Go Online')),
+              _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black),
+                    onPressed: _handleSubmit, 
+                    child: Text(_isLogin ? 'Go Online' : 'Register as Rider', style: const TextStyle(fontWeight: FontWeight.bold))
+                  ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => setState(() => _isLogin = !_isLogin),
+                child: Text(_isLogin ? "Don't have an account? Register here" : "Already have an account? Login here", style: const TextStyle(color: Color(0xFF0B121B))),
+              )
             ],
           ),
         ),
