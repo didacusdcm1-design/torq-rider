@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -54,17 +54,19 @@ class TripService {
 
   Future<Map<String, dynamic>?> getWallet(String token) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/trips/rider/wallet'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/wallet'), headers: {'Authorization': 'Bearer $token'});
+      if (response.statusCode == 200) return jsonDecode(response.body);
       return null;
-    } catch (e) {
+    } catch (e) { return null; }
+  }
+
+  // NEW: Get Rider Profile to check for rejection
+  Future<Map<String, dynamic>?> getRiderProfile(String token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/profile'), headers: {'Authorization': 'Bearer $token'});
+      if (response.statusCode == 200) return jsonDecode(response.body);
       return null;
-    }
+    } catch (e) { return null; }
   }
 
   Future<bool> updateFullProfile(String token, String fullName, String dob, String idNumber, String emergencyContact, String reg, String make, String model, String insurance, String idDoc, String licenseDoc, String insuranceDoc, String selfieDoc) async {

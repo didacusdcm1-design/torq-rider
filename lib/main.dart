@@ -271,6 +271,8 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 class TripsTab extends StatelessWidget { const TripsTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Trip History'))); } }
+class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
+
 class EarningsTab extends StatefulWidget {
   final String token;
   const EarningsTab({super.key, required this.token});
@@ -348,8 +350,6 @@ class _EarningsTabState extends State<EarningsTab> {
   }
 }
 
-class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
-
 class AccountTab extends StatefulWidget {
   final String token;
   const AccountTab({super.key, required this.token});
@@ -361,6 +361,8 @@ class _AccountTabState extends State<AccountTab> {
   int _currentStep = 0;
   final _tripService = TripService();
   bool _isSaving = false;
+  String _verificationStatus = "";
+  String _rejectionReason = "";
 
   final _nameController = TextEditingController();
   final _dobController = TextEditingController();
@@ -376,6 +378,22 @@ class _AccountTabState extends State<AccountTab> {
   String _licenseDoc = "";
   String _insuranceDoc = "";
   String _selfieDoc = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileStatus();
+  }
+
+  void _loadProfileStatus() async {
+    final profile = await _tripService.getRiderProfile(widget.token);
+    if (profile != null && mounted) {
+      setState(() {
+        _verificationStatus = profile['verificationStatus'] ?? "";
+        _rejectionReason = profile['rejectionReason'] ?? "";
+      });
+    }
+  }
 
   bool _validateStep() {
     if (_currentStep == 0) {
@@ -400,7 +418,10 @@ class _AccountTabState extends State<AccountTab> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application submitted for review!'), backgroundColor: Colors.green));
-      setState(() => _currentStep = 0);
+      setState(() {
+        _currentStep = 0;
+        _verificationStatus = "PENDING";
+      });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save profile'), backgroundColor: Colors.red));
     }
@@ -408,17 +429,10 @@ class _AccountTabState extends State<AccountTab> {
 
   Future<void> _pickFile(String label, Function(String) onChanged) async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        withData: true,
-      );
-
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
       if (result != null && result.files.single.bytes != null) {
         setState(() => _isSaving = true);
-        String? url = await _tripService.uploadFile(
-          result.files.single.bytes!, 
-          result.files.single.name
-        );
+        String? url = await _tripService.uploadFile(result.files.single.bytes!, result.files.single.name);
         setState(() => _isSaving = false);
         
         if (url != null) {
@@ -438,69 +452,91 @@ class _AccountTabState extends State<AccountTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Driver Verification'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white),
-      body: Stepper(
-        currentStep: _currentStep,
-        onStepContinue: () {
-          if (_validateStep()) {
-            if (_currentStep < 2) {
-              setState(() => _currentStep += 1);
-            } else {
-              _submitProfile();
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields on this step'), backgroundColor: Colors.red));
-          }
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) setState(() => _currentStep -= 1);
-        },
-        steps: [
-          Step(
-            title: const Text('Personal Details'),
-            isActive: _currentStep >= 0,
-            content: Column(
-              children: [
-                TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
-                const SizedBox(height: 10),
-                TextField(controller: _dobController, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD) *')),
-                const SizedBox(height: 10),
-                TextField(controller: _idController, decoration: const InputDecoration(labelText: 'National ID Number *')),
-                const SizedBox(height: 10),
-                TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact *')),
-              ],
+      body: Column(
+        children: [
+          if (_verificationStatus == 'REJECTED')
+            Container(
+              width: double.infinity,
+              color: Colors.red,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("APPLICATION REJECTED", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 5),
+                  Text("Reason: $_rejectionReason", style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 5),
+                  const Text("Please update your details and resubmit.", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          Step(
-            title: const Text('Motorcycle Details'),
-            isActive: _currentStep >= 1,
-            content: Column(
-              children: [
-                TextField(controller: _regController, decoration: const InputDecoration(labelText: 'Registration Number *')),
-                const SizedBox(height: 10),
-                TextField(controller: _makeController, decoration: const InputDecoration(labelText: 'Make *')),
-                const SizedBox(height: 10),
-                TextField(controller: _modelController, decoration: const InputDecoration(labelText: 'Model *')),
-                const SizedBox(height: 10),
-                TextField(controller: _insuranceController, decoration: const InputDecoration(labelText: 'Insurance Expiry *')),
-              ],
-            ),
-          ),
-          Step(
-            title: const Text('Documents & Review'),
-            isActive: _currentStep >= 2,
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Upload Documents *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 10),
-                _buildUploadTile('National ID', _idDoc, (val) => setState(() => _idDoc = val)),
-                _buildUploadTile('Driver License', _licenseDoc, (val) => setState(() => _licenseDoc = val)),
-                _buildUploadTile('Insurance Certificate', _insuranceDoc, (val) => setState(() => _insuranceDoc = val)),
-                _buildUploadTile('Selfie', _selfieDoc, (val) => setState(() => _selfieDoc = val)),
-                const SizedBox(height: 20),
-                const Text('By submitting, you agree to TORQ\'s terms of service.', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 20),
-                _isSaving ? const Center(child: CircularProgressIndicator()) : const Text('Ready to submit.'),
+          Expanded(
+            child: Stepper(
+              currentStep: _currentStep,
+              onStepContinue: () {
+                if (_validateStep()) {
+                  if (_currentStep < 2) {
+                    setState(() => _currentStep += 1);
+                  } else {
+                    _submitProfile();
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields on this step'), backgroundColor: Colors.red));
+                }
+              },
+              onStepCancel: () {
+                if (_currentStep > 0) setState(() => _currentStep -= 1);
+              },
+              steps: [
+                Step(
+                  title: const Text('Personal Details'),
+                  isActive: _currentStep >= 0,
+                  content: Column(
+                    children: [
+                      TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _dobController, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD) *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _idController, decoration: const InputDecoration(labelText: 'National ID Number *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _emergencyController, decoration: const InputDecoration(labelText: 'Emergency Contact *')),
+                    ],
+                  ),
+                ),
+                Step(
+                  title: const Text('Motorcycle Details'),
+                  isActive: _currentStep >= 1,
+                  content: Column(
+                    children: [
+                      TextField(controller: _regController, decoration: const InputDecoration(labelText: 'Registration Number *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _makeController, decoration: const InputDecoration(labelText: 'Make *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _modelController, decoration: const InputDecoration(labelText: 'Model *')),
+                      const SizedBox(height: 10),
+                      TextField(controller: _insuranceController, decoration: const InputDecoration(labelText: 'Insurance Expiry *')),
+                    ],
+                  ),
+                ),
+                Step(
+                  title: const Text('Documents & Review'),
+                  isActive: _currentStep >= 2,
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Upload Documents *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 10),
+                      _buildUploadTile('National ID', _idDoc, (val) => setState(() => _idDoc = val)),
+                      _buildUploadTile('Driver License', _licenseDoc, (val) => setState(() => _licenseDoc = val)),
+                      _buildUploadTile('Insurance Certificate', _insuranceDoc, (val) => setState(() => _insuranceDoc = val)),
+                      _buildUploadTile('Selfie', _selfieDoc, (val) => setState(() => _selfieDoc = val)),
+                      const SizedBox(height: 20),
+                      const Text('By submitting, you agree to TORQ\'s terms of service.', style: TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 20),
+                      _isSaving ? const Center(child: CircularProgressIndicator()) : const Text('Ready to submit.'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -525,5 +561,3 @@ class _AccountTabState extends State<AccountTab> {
     );
   }
 }
-
-
