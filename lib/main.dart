@@ -150,7 +150,7 @@ class _MainNavigationState extends State<MainNavigation> {
       HomeTab(token: widget.token),
       TripsTab(token: widget.token),
       EarningsTab(token: widget.token),
-      const InboxTab(),
+      InboxTab(token: widget.token),
       AccountTab(token: widget.token),
     ];
 
@@ -377,6 +377,30 @@ class _EarningsTabState extends State<EarningsTab> {
     });
   }
 
+  void _requestPayout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Payout'),
+        content: const Text('Are you sure you want to withdraw your available balance to M-Pesa?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yes, Withdraw')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final success = await _tripService.requestPayout(widget.token);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payout requested successfully!'), backgroundColor: Colors.green));
+        _loadWallet();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payout failed'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -420,6 +444,12 @@ class _EarningsTabState extends State<EarningsTab> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFBD19), foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 16)),
+                    onPressed: _requestPayout,
+                    child: const Text('Withdraw to M-Pesa', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
             ),
@@ -427,7 +457,60 @@ class _EarningsTabState extends State<EarningsTab> {
   }
 }
 
-class InboxTab extends StatelessWidget { const InboxTab({super.key}); @override Widget build(BuildContext context) { return const Scaffold(body: Center(child: Text('Messages & Alerts'))); } }
+class InboxTab extends StatefulWidget {
+  final String token;
+  const InboxTab({super.key, required this.token});
+  @override
+  State<InboxTab> createState() => _InboxTabState();
+}
+
+class _InboxTabState extends State<InboxTab> {
+  final _tripService = TripService();
+  List<dynamic> _notifications = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  void _loadNotifications() async {
+    setState(() => _isLoading = true);
+    final notifications = await _tripService.getNotifications(widget.token);
+    setState(() {
+      _notifications = notifications;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Inbox'), backgroundColor: const Color(0xFF0B121B), foregroundColor: Colors.white, actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadNotifications)]),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+              ? const Center(child: Text('No notifications yet.'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _notifications.length,
+                  itemBuilder: (context, index) {
+                    final note = _notifications[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: const Icon(Icons.notifications, color: Color(0xFFFFBD19)),
+                        title: Text(note['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(note['message']),
+                        trailing: Text(DateTime.parse(note['createdAt']).toLocal().toString().substring(11, 16), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+}
 
 class AccountTab extends StatefulWidget {
   final String token;
