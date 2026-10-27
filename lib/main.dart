@@ -202,10 +202,22 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   void _updateStatus(String tripId, String status) async {
-    final success = await _tripService.updateStatus(widget.token, tripId, status);
-    if (success && mounted) {
+    String? errorMessage;
+
+    if (status == 'ACCEPTED') {
+      // Use the new strict acceptTrip method
+      errorMessage = await _tripService.acceptTrip(widget.token, tripId);
+    } else {
+      errorMessage = await _tripService.updateStatus(widget.token, tripId, status);
+    }
+
+    if (errorMessage == null && mounted) {
+      // Success
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Status updated to $status'), backgroundColor: Colors.green));
       _fetchTrips();
+    } else if (mounted) {
+      // Show the error from the backend (e.g., "Account pending approval")
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage ?? 'Error'), backgroundColor: Colors.red));
     }
   }
 
