@@ -10,6 +10,44 @@ class ApiService {
     return prefs.getString('jwt_token');
   }
 
+  // 1. REGISTRATION
+  static Future<Map<String, dynamic>> submitRegistration({
+    required String fullName,
+    required String phone,
+    required String nationalId,
+    required String licenseNumber,
+    required String emergencyContact,
+    required String bikeMake,
+    required String bikeModel,
+    required String bikeColor,
+    required String bikeReg,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/riders/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fullName': fullName,
+          'phone': phone,
+          'nationalId': nationalId,
+          'licenseNumber': licenseNumber,
+          'emergencyContact': emergencyContact,
+          'bikeMake': bikeMake,
+          'bikeModel': bikeModel,
+          'bikeColor': bikeColor,
+          'bikeReg': bikeReg,
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {'success': true};
+      }
+      return {'success': false, 'message': 'Registration failed'};
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  // 2. TOGGLE ONLINE
   static Future<Map<String, dynamic>> toggleOnlineStatus(bool isOnline) async {
     try {
       final response = await http.patch(
@@ -23,6 +61,7 @@ class ApiService {
     }
   }
 
+  // 3. FETCH ACTIVE TRIPS
   static Future<List<dynamic>> getActiveTrips() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/trips/rider/active'));
@@ -33,6 +72,7 @@ class ApiService {
     }
   }
 
+  // 4. ACCEPT TRIP
   static Future<bool> acceptTrip(String tripId) async {
     try {
       final response = await http.patch(Uri.parse('$baseUrl/trips/accept/$tripId'));
@@ -42,6 +82,7 @@ class ApiService {
     }
   }
 
+  // 5. UPDATE TRIP STATUS
   static Future<bool> updateTripStatus(String tripId, String status) async {
     try {
       final response = await http.patch(
@@ -55,6 +96,7 @@ class ApiService {
     }
   }
 
+  // 6. COMPLETE TRIP
   static Future<Map<String, dynamic>> completeTrip(String tripId, String pin) async {
     try {
       final response = await http.patch(
