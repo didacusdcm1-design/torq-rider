@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -13,7 +13,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isOnline = true;
   bool _isLoading = false;
   Map<String, dynamic>? _activeTrip;
-  Timer? _pollingTimer;
+  
 
   @override
   void initState() {
@@ -22,14 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkForTrips(); 
     
     // Poll every 10 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      _checkForTrips();
-    });
+    
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    
     super.dispose();
   }
 
