@@ -81,17 +81,18 @@ class ApiService {
       return false;
     }
   }
-  static Future<Map<String, dynamic>> completeTrip(String tripId, String pin) async {
+    static Future<Map<String, dynamic>> completeTrip(String tripId, String pin) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/trips/complete/$tripId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'pin': pin}),
       );
-      if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true};
       }
-      return {'success': false, 'message': 'Invalid PIN'};
+      return {'success': false, 'message': data['message'] ?? 'Invalid PIN'};
     } catch (e) {
       return {'success': false, 'message': 'Network error'};
     }
@@ -113,4 +114,5 @@ class ApiService {
     }
   }
 }
+
 
