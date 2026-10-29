@@ -1,4 +1,4 @@
-﻿name: torq_rider
+name: torq_rider
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -10,10 +10,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.2.1
+  http: ^1.6.0
   socket_io_client: ^3.1.1
   file_picker: ^8.0.0
   cupertino_icons: ^1.0.9
+  shared_preferences: ^2.5.6
 
 dev_dependencies:
   flutter_test:
