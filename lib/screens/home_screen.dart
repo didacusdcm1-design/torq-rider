@@ -1,4 +1,3 @@
-﻿
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -13,22 +12,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isOnline = true;
   bool _isLoading = false;
   Map<String, dynamic>? _activeTrip;
-  
 
   @override
   void initState() {
     super.initState();
-    // Fetch immediately on load
-    _checkForTrips(); 
-    
-    // Poll every 10 seconds
-    
-  }
-
-  @override
-  void dispose() {
-    
-    super.dispose();
+    _checkForTrips();
   }
 
   Future<void> _checkForTrips() async {
@@ -56,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
-        // Update local state instantly
         setState(() => _activeTrip!['status'] = newStatus);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -67,8 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _toggleOnlineStatus(bool value) async {
-    if (_activeTrip != null) return; // Cannot go offline while on trip
-    
+    if (_activeTrip != null) return;
     setState(() => _isLoading = true);
     await ApiService.toggleOnlineStatus(value);
     if (mounted) {
@@ -94,10 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: const InputDecoration(hintText: "----", hintStyle: TextStyle(color: Colors.grey)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text("Cancel", style: TextStyle(color: Colors.grey))
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel", style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFCD34D)),
             onPressed: () async {
@@ -134,7 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCurrentState() {
-    // 1. IDLE STATE
     if (_activeTrip == null) {
       return Padding(
         padding: const EdgeInsets.all(24.0),
@@ -162,8 +144,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 2. NEW TRIP REQUEST
-    if (_activeTrip!['status'] == 'ACCEPTED') {
+    final status = _activeTrip!['status'] as String;
+
+    if (status == 'ACCEPTED') {
       return Center(
         child: Container(
           margin: const EdgeInsets.all(20),
@@ -195,23 +178,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 3. NAVIGATING TO PICKUP
-    if (_activeTrip!['status'] == 'IN_PROGRESS') {
+    if (status == 'IN_PROGRESS') {
       return _buildTripScreen("Navigating to Pickup", Icons.navigation, "I HAVE ARRIVED", () => _updateTripStatus('ARRIVED_AT_PICKUP'));
     }
 
-    // 4. ARRIVED AT PICKUP
-    if (_activeTrip!['status'] == 'ARRIVED_AT_PICKUP') {
+    if (status == 'ARRIVED_AT_PICKUP') {
       return _buildTripScreen("At Pickup Location", Icons.location_on, "START TRIP", () => _updateTripStatus('IN_PROGRESS_DEST'));
     }
 
-    // 5. NAVIGATING TO DESTINATION
-    if (_activeTrip!['status'] == 'IN_PROGRESS_DEST') {
+    if (status == 'IN_PROGRESS_DEST') {
       return _buildTripScreen("Navigating to Destination", Icons.flag, "COMPLETE TRIP", _showCompleteDialog);
     }
 
-    // Fallback
-    return const Center(child: Text("Loading...", style: TextStyle(color: Colors.white)));
+    return const Center(child: Text("Trip Completed. Loading...", style: TextStyle(color: Colors.white)));
   }
 
   Widget _buildTripScreen(String title, IconData icon, String buttonText, VoidCallback onPressed) {
@@ -238,4 +217,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
+}// Force rebuild 10/30/2026 00:52:29
