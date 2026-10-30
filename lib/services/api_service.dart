@@ -18,9 +18,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phone': phone, 'password': password}),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', data['access_token']);
@@ -39,7 +37,6 @@ class ApiService {
       request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
-      
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(responseData.body);
         return data['url'];
@@ -85,9 +82,7 @@ class ApiService {
           'selfieUrl': selfieUrl,
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         return {'success': true, 'temporaryPassword': data['temporaryPassword']};
       }
@@ -113,6 +108,16 @@ class ApiService {
   static Future<List<dynamic>> getActiveTrips() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/trips/rider/active'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> getRiderHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/history'));
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) {
@@ -159,16 +164,19 @@ class ApiService {
     }
   }
 
-  static Future<bool> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
+  static Future<Map<String, dynamic>> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/trips/cancel/$tripId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'cancelledBy': cancelledBy, 'reason': reason, 'note': note}),
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true};
+      }
+      return {'success': false, 'message': 'Failed to cancel'};
     } catch (e) {
-      return false;
+      return {'success': false, 'message': 'Network error'};
     }
   }
 

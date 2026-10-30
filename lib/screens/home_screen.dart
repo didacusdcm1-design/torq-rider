@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -10,29 +10,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isOnline = true;
-  bool _isLoading = true;
+  bool _isLoading = false;
   Map<String, dynamic>? _activeTrip;
 
   @override
   void initState() {
     super.initState();
-    // FIX: Fetch active trip immediately on app load to restore state
-    _loadActiveTrip();
+    _checkForTrips();
   }
 
-  Future<void> _loadActiveTrip() async {
-    setState(() => _isLoading = true);
+  Future<void> _checkForTrips() async {
     final trips = await ApiService.getActiveTrips();
     if (mounted) {
-      setState(() {
-        if (trips.isNotEmpty) {
+      if (trips.isNotEmpty) {
+        setState(() {
           _activeTrip = trips.first;
           _isOnline = true;
-        } else {
+        });
+      } else {
+        setState(() {
           _activeTrip = null;
-        }
-        _isLoading = false;
-      });
+        });
+      }
     }
   }
 
@@ -40,15 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_activeTrip == null) return;
     setState(() => _isLoading = true);
     final success = await ApiService.updateTripStatus(_activeTrip!['id'], newStatus);
-    
     if (mounted) {
+      setState(() => _isLoading = false);
       if (success) {
-        setState(() {
-          _activeTrip!['status'] = newStatus;
-          _isLoading = false;
-        });
+        setState(() => _activeTrip!['status'] = newStatus);
       } else {
-        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to update status."), backgroundColor: Colors.red),
         );
@@ -62,17 +57,54 @@ class _HomeScreenState extends State<HomeScreen> {
     await ApiService.toggleOnlineStatus(value);
     if (mounted) {
       setState(() {
-        _isOnline = value;
         _isLoading = false;
+        _isOnline = value;
       });
     }
   }
 
-  // --- CANCELLATION MODAL ---
+  void _showCompleteDialog() {
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Enter Customer PIN", style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: pinController,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
+          textAlign: TextAlign.center,
+          decoration: const InputDecoration(hintText: "----", hintStyle: TextStyle(color: Colors.grey)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel", style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFCD34D)),
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await ApiService.completeTrip(_activeTrip!['id'], pinController.text);
+              if (result['success']) {
+                setState(() => _activeTrip = null);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Trip Completed Successfully!"), backgroundColor: Colors.green),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed: ${result['message']}"), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text("Complete", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showCancellationDialog() {
     String? selectedReason;
     final noteController = TextEditingController();
-    
     final riderReasons = [
       "Customer is not at the pickup location.",
       "Customer is not responding to calls or messages.",
@@ -147,7 +179,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     selectedReason!, 
                     noteController.text
                   );
-                  
                   if (mounted) {
                     setState(() => _isLoading = false);
                     if (result['success'] == true) {
@@ -157,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Failed: ${result['message']}"), backgroundColor: Colors.red),
+                        SnackBar(content: Text("Failed to cancel trip."), backgroundColor: Colors.red),
                       );
                     }
                   }
@@ -170,8 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // --- UI BUILDERS ---
 
   Widget _buildTopBar() {
     return Padding(
@@ -234,8 +263,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildActiveTripState() {
     final status = _activeTrip!['status'] as String;
-    
-    // Determine Action Button based on Status
     String buttonText = "";
     VoidCallback? onPressed;
     IconData icon = Icons.navigation;
@@ -246,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
       buttonText = "ACCEPT TRIP";
       onPressed = () async {
         await ApiService.acceptTrip(_activeTrip!['id']);
-        _loadActiveTrip();
+        _checkForTrips();
       };
     } else if (status == 'IN_PROGRESS') {
       title = "Navigating to Pickup";
@@ -262,11 +289,11 @@ class _HomeScreenState extends State<HomeScreen> {
       title = "Navigating to Destination";
       buttonText = "COMPLETE TRIP";
       icon = Icons.flag;
-      onPressed = () => _showCompleteDialog(); // Assuming you have this
+      onPressed = _showCompleteDialog;
     } else {
        title = "Trip Status Unknown";
        buttonText = "RETURN";
-       onPressed = () => _loadActiveTrip();
+       onPressed = () => _checkForTrips();
     }
 
     return SingleChildScrollView(
@@ -274,7 +301,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ACTIVE TRIP CARD
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -313,8 +339,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 30),
-
-          // ACTION BUTTON
           SizedBox(
             height: 60,
             child: ElevatedButton.icon(
@@ -327,10 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          
           const SizedBox(height: 16),
-
-          // CANCEL BUTTON (Only show if trip hasn't started yet)
           if (status == 'ACCEPTED' || status == 'IN_PROGRESS' || status == 'ARRIVED_AT_PICKUP')
             TextButton(
               onPressed: _showCancellationDialog,
@@ -338,27 +359,6 @@ class _HomeScreenState extends State<HomeScreen> {
             )
         ],
       ),
-    );
-  }
-
-  void _showCompleteDialog() {
-    // (Implementation for completing trip would go here)
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text("Enter Customer PIN", style: TextStyle(color: Colors.white)),
-        content: TextField(
-          keyboardType: TextInputType.number,
-          style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
-          textAlign: TextAlign.center,
-          decoration: const InputDecoration(hintText: "----", hintStyle: TextStyle(color: Colors.grey)),
-        ),
-        actions: [
-           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-           ElevatedButton(onPressed: () { Navigator.pop(context); _updateTripStatus('COMPLETED'); }, child: const Text("Complete")),
-        ],
-      )
     );
   }
 
@@ -380,7 +380,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // Keep Bottom Navigation Bar from main shell if this is inside a shell
     );
   }
 }
