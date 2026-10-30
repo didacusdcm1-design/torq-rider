@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
@@ -32,7 +33,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage(String type) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image != null) {
       setState(() {
         if (type == 'license') _licenseImage = File(image.path);
@@ -43,17 +44,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  // Helper to convert File to Base64 String
+  Future<String?> _convertToBase64(File? file) async {
+    if (file == null) return null;
+    try {
+      final bytes = await file.readAsBytes();
+      return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    } catch (e) {
+      return null;
+    }
+  }
+
   void _nextStep() async {
     if (_currentStep < 3) {
       setState(() => _currentStep += 1);
     } else {
       setState(() => _isLoading = true);
 
-      String? licenseUrl, insuranceUrl, bikeUrl, selfieUrl;
-      if (_licenseImage != null) licenseUrl = await ApiService.uploadImage(_licenseImage!);
-      if (_insuranceImage != null) insuranceUrl = await ApiService.uploadImage(_insuranceImage!);
-      if (_bikeImage != null) bikeUrl = await ApiService.uploadImage(_bikeImage!);
-      if (_selfieImage != null) selfieUrl = await ApiService.uploadImage(_selfieImage!);
+      // Convert images to Base64
+      String? licenseB64 = await _convertToBase64(_licenseImage);
+      String? insuranceB64 = await _convertToBase64(_insuranceImage);
+      String? bikeB64 = await _convertToBase64(_bikeImage);
+      String? selfieB64 = await _convertToBase64(_selfieImage);
 
       final result = await ApiService.submitRegistration(
         fullName: _fullNameController.text,
@@ -65,10 +77,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         bikeModel: _bikeModelController.text,
         bikeColor: _bikeColorController.text,
         bikeReg: _bikeRegController.text,
-        licenseDocUrl: licenseUrl,
-        insuranceDocUrl: insuranceUrl,
-        bikePhotoUrl: bikeUrl,
-        selfieUrl: selfieUrl,
+        licenseDocUrl: licenseB64,
+        insuranceDocUrl: insuranceB64,
+        bikePhotoUrl: bikeB64,
+        selfieUrl: selfieB64,
       );
 
       setState(() => _isLoading = false);
