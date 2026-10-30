@@ -39,7 +39,8 @@ class ApiService {
         }),
       );
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return {'success': true};
+        final data = jsonDecode(response.body);
+        return {'success': true, 'temporaryPassword': data['temporaryPassword']};
       }
       return {'success': false, 'message': 'Registration failed'};
     } catch (e) {
@@ -165,3 +166,4 @@ class ApiService {
     }
   }
 }
+

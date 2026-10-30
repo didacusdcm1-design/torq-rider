@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const Text(
-                'RIDE • DELIVER • CONNECT',
+                'RIDE â€¢ DELIVER â€¢ CONNECT',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
@@ -129,6 +129,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Password reset link sent to your registered phone number (Mock)."), backgroundColor: Colors.green),
+                  );
+                },
+                child: const Text("Forgot Password?", style: TextStyle(color: Color(0xFFFCD34D))),
+              ),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacementNamed(context, '/register');

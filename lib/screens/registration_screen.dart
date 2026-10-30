@@ -46,10 +46,33 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       if (result['success']) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Registration Submitted! Waiting for Admin Approval."), backgroundColor: Colors.green),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF1E1E1E),
+              title: const Text("Registration Successful!", style: TextStyle(color: Colors.white)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Your temporary login password is:", style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  Text(result['temporaryPassword'] ?? 'N/A', style: const TextStyle(color: Color(0xFFFCD34D), fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                  const SizedBox(height: 12),
+                  const Text("Use your phone number and this password to log in once approved.", style: TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: const Text("Go to Login", style: TextStyle(color: Color(0xFFFCD34D))),
+                )
+              ],
+            )
           );
-          Navigator.pushReplacementNamed(context, '/home');
         }
       } else {
         if (mounted) {
@@ -172,3 +195,4 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 }
+
