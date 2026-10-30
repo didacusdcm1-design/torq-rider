@@ -14,7 +14,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   int _currentStep = 0;
   bool _isLoading = false;
 
-  // Controllers
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _nationalIdController = TextEditingController();
@@ -25,7 +24,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _bikeColorController = TextEditingController();
   final _bikeRegController = TextEditingController();
 
-  // Image Files
   File? _licenseImage;
   File? _insuranceImage;
   File? _bikeImage;
@@ -51,14 +49,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } else {
       setState(() => _isLoading = true);
 
-      // 1. Upload Images
       String? licenseUrl, insuranceUrl, bikeUrl, selfieUrl;
       if (_licenseImage != null) licenseUrl = await ApiService.uploadImage(_licenseImage!);
       if (_insuranceImage != null) insuranceUrl = await ApiService.uploadImage(_insuranceImage!);
       if (_bikeImage != null) bikeUrl = await ApiService.uploadImage(_bikeImage!);
       if (_selfieImage != null) selfieUrl = await ApiService.uploadImage(_selfieImage!);
 
-      // 2. Submit Registration
       final result = await ApiService.submitRegistration(
         fullName: _fullNameController.text,
         phone: _phoneController.text,

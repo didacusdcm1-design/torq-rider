@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +11,45 @@ class ApiService {
     return prefs.getString('jwt_token');
   }
 
-  // 1. REGISTRATION
+  static Future<Map<String, dynamic>> login(String phone, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone, 'password': password}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', data['access_token']);
+        return {'success': true, 'user': data['user']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  static Future<String?> uploadImage(File imageFile) async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/riders/upload'));
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      final response = await request.send();
+      final responseData = await http.Response.fromStream(response);
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(responseData.body);
+        return data['url'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>> submitRegistration({
     required String fullName,
     required String phone,
@@ -22,6 +60,10 @@ class ApiService {
     required String bikeModel,
     required String bikeColor,
     required String bikeReg,
+    String? licenseDocUrl,
+    String? insuranceDocUrl,
+    String? bikePhotoUrl,
+    String? selfieUrl,
   }) async {
     try {
       final response = await http.post(
@@ -37,10 +79,16 @@ class ApiService {
           'bikeModel': bikeModel,
           'bikeColor': bikeColor,
           'bikeReg': bikeReg,
+          'licenseDocUrl': licenseDocUrl,
+          'insuranceDocUrl': insuranceDocUrl,
+          'bikePhotoUrl': bikePhotoUrl,
+          'selfieUrl': selfieUrl,
         }),
       );
+
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         return {'success': true, 'temporaryPassword': data['temporaryPassword']};
       }
       return {'success': false, 'message': 'Registration failed'};
@@ -49,7 +97,6 @@ class ApiService {
     }
   }
 
-  // 2. TOGGLE ONLINE
   static Future<Map<String, dynamic>> toggleOnlineStatus(bool isOnline) async {
     try {
       final response = await http.patch(
@@ -63,7 +110,6 @@ class ApiService {
     }
   }
 
-  // 3. FETCH ACTIVE TRIPS
   static Future<List<dynamic>> getActiveTrips() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/trips/rider/active'));
@@ -74,7 +120,6 @@ class ApiService {
     }
   }
 
-  // 4. ACCEPT TRIP
   static Future<bool> acceptTrip(String tripId) async {
     try {
       final response = await http.patch(Uri.parse('$baseUrl/trips/accept/$tripId'));
@@ -84,7 +129,6 @@ class ApiService {
     }
   }
 
-  // 5. UPDATE TRIP STATUS
   static Future<bool> updateTripStatus(String tripId, String status) async {
     try {
       final response = await http.patch(
@@ -98,7 +142,6 @@ class ApiService {
     }
   }
 
-  // 6. COMPLETE TRIP
   static Future<Map<String, dynamic>> completeTrip(String tripId, String pin) async {
     try {
       final response = await http.patch(
@@ -115,75 +158,31 @@ class ApiService {
       return {'success': false, 'message': 'Network error'};
     }
   }
-      static Future<Map<String, dynamic>> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
+
+  static Future<bool> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/trips/cancel/$tripId'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'cancelledBy': cancelledBy,
-          'reason': reason,
-          'note': note,
-        }),
+        body: jsonEncode({'cancelledBy': cancelledBy, 'reason': reason, 'note': note}),
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true};
-      }
-      return {'success': false, 'message': 'Server rejected cancellation'};
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      return {'success': false, 'message': 'Network error'};
+      return false;
     }
   }
-  static Future<List<dynamic>> getRiderHistory() async {
+
+  static Future<Map<String, dynamic>> rateTrip(String tripId, int rating) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/trips/rider/history'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-  static Future<Map<String, dynamic>> login(String phone, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+      final response = await http.patch(
+        Uri.parse('$baseUrl/trips/$tripId/rate'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone': phone, 'password': password}),
+        body: jsonEncode({'rating': rating}),
       );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // Save the token
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', data['access_token']);
-        
-        return {'success': true, 'user': data['user']};
-      } else {
-        return {'success': false, 'message': data['message'] ?? 'Login failed'};
-      }
+      if (response.statusCode == 200) return {'success': true};
+      return {'success': false, 'message': 'Failed to submit rating'};
     } catch (e) {
       return {'success': false, 'message': 'Network error'};
-    }
-  }
-  static Future<String?> uploadImage(File imageFile) async {
-    try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/riders/upload'),
-      );
-      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-      
-      final response = await request.send();
-      final responseData = await http.Response.fromStream(response);
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(responseData.body);
-        return data['url'];
-      }
-      return null;
-    } catch (e) {
-      return null;
     }
   }
 }
