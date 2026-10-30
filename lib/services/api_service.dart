@@ -141,5 +141,27 @@ class ApiService {
       return [];
     }
   }
-}
+  static Future<Map<String, dynamic>> login(String phone, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone, 'password': password}),
+      );
 
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // Save the token
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', data['access_token']);
+        
+        return {'success': true, 'user': data['user']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+}

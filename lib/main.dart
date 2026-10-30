@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/trips_screen.dart';
 import 'screens/earnings_screen.dart';
 import 'screens/inbox_screen.dart';
@@ -26,8 +27,9 @@ class TorqRiderApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: '/register',
+      initialRoute: '/login',
       routes: {
+        '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegistrationScreen(),
         '/home': (context) => const MainNavigationShell(),
       },
