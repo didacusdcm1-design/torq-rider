@@ -129,4 +129,13 @@ class ApiService {
       return false;
     }
   }
+  static Future<List<dynamic>> getRiderHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/trips/rider/history'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
 }
