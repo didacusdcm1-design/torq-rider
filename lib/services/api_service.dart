@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -111,6 +111,22 @@ class ApiService {
       return {'success': false, 'message': data['message'] ?? 'Invalid PIN'};
     } catch (e) {
       return {'success': false, 'message': 'Network error'};
+    }
+  }
+  static Future<bool> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/trips/cancel/$tripId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'cancelledBy': cancelledBy,
+          'reason': reason,
+          'note': note,
+        }),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
     }
   }
 }
