@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -141,23 +141,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   Navigator.pop(context);
                   setState(() => _isLoading = true);
-                  final success = await ApiService.cancelTrip(
+                  final result = await ApiService.cancelTrip(
                     _activeTrip!['id'], 
                     'RIDER', 
                     selectedReason!, 
                     noteController.text
                   );
+                  
                   if (mounted) {
-                    if (success) {
-                      setState(() {
-                        _activeTrip = null;
-                        _isLoading = false;
-                      });
+                    setState(() => _isLoading = false);
+                    if (result['success'] == true) {
+                      setState(() => _activeTrip = null);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Trip Cancelled successfully."), backgroundColor: Colors.green),
                       );
                     } else {
-                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed: ${result['message']}"), backgroundColor: Colors.red),
+                      );
                     }
                   }
                 },
