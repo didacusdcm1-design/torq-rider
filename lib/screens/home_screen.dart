@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               Navigator.pop(context);
               final result = await ApiService.completeTrip(_activeTrip!['id'], pinController.text);
-              if (result['success']) {
+              if (result['success'] == true) {
                 setState(() => _activeTrip = null);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Trip Completed Successfully!"), backgroundColor: Colors.green),
@@ -382,4 +382,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
+}// Force rebuild 10/30/2026 14:03:34
