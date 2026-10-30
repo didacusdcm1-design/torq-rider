@@ -115,16 +115,6 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getRiderHistory() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/trips/rider/history'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
   static Future<bool> acceptTrip(String tripId) async {
     try {
       final response = await http.patch(Uri.parse('$baseUrl/trips/accept/$tripId'));
@@ -164,19 +154,16 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
+  static Future<bool> cancelTrip(String tripId, String cancelledBy, String reason, String note) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/trips/cancel/$tripId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'cancelledBy': cancelledBy, 'reason': reason, 'note': note}),
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true};
-      }
-      return {'success': false, 'message': 'Failed to cancel'};
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      return {'success': false, 'message': 'Network error'};
+      return false;
     }
   }
 
