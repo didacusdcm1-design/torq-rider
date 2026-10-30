@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -10,6 +12,7 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   int _currentStep = 0;
+  bool _isLoading = false;
 
   // Controllers
   final _fullNameController = TextEditingController();
@@ -22,7 +25,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _bikeColorController = TextEditingController();
   final _bikeRegController = TextEditingController();
 
-  bool _isLoading = false;
+  // Image Files
+  File? _licenseImage;
+  File? _insuranceImage;
+  File? _bikeImage;
+  File? _selfieImage;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage(String type) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        if (type == 'license') _licenseImage = File(image.path);
+        if (type == 'insurance') _insuranceImage = File(image.path);
+        if (type == 'bike') _bikeImage = File(image.path);
+        if (type == 'selfie') _selfieImage = File(image.path);
+      });
+    }
+  }
 
   void _nextStep() async {
     if (_currentStep < 3) {
@@ -30,6 +51,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } else {
       setState(() => _isLoading = true);
 
+      // 1. Upload Images
+      String? licenseUrl, insuranceUrl, bikeUrl, selfieUrl;
+      if (_licenseImage != null) licenseUrl = await ApiService.uploadImage(_licenseImage!);
+      if (_insuranceImage != null) insuranceUrl = await ApiService.uploadImage(_insuranceImage!);
+      if (_bikeImage != null) bikeUrl = await ApiService.uploadImage(_bikeImage!);
+      if (_selfieImage != null) selfieUrl = await ApiService.uploadImage(_selfieImage!);
+
+      // 2. Submit Registration
       final result = await ApiService.submitRegistration(
         fullName: _fullNameController.text,
         phone: _phoneController.text,
@@ -40,6 +69,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         bikeModel: _bikeModelController.text,
         bikeColor: _bikeColorController.text,
         bikeReg: _bikeRegController.text,
+        licenseDocUrl: licenseUrl,
+        insuranceDocUrl: insuranceUrl,
+        bikePhotoUrl: bikeUrl,
+        selfieUrl: selfieUrl,
       );
 
       setState(() => _isLoading = false);
@@ -58,104 +91,69 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   const Text("Your temporary login password is:", style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 12),
                   Text(result['temporaryPassword'] ?? 'N/A', style: const TextStyle(color: Color(0xFFFCD34D), fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                  const SizedBox(height: 12),
-                  const Text("Use your phone number and this password to log in once approved.", style: TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center),
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
+                  onPressed: () { Navigator.pop(context); Navigator.pushReplacementNamed(context, '/login'); },
                   child: const Text("Go to Login", style: TextStyle(color: Color(0xFFFCD34D))),
                 )
               ],
             )
           );
         }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed: ${result['message']}"), backgroundColor: Colors.red),
-          );
-        }
       }
     }
-  }
-
-  void _prevStep() {
-    if (_currentStep > 0) setState(() => _currentStep -= 1);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        title: const Text("Rider Verification", style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("Rider Verification", style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF1E1E1E)),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator(color: Color(0xFFFCD34D)))
         : Stepper(
             currentStep: _currentStep,
             onStepContinue: _nextStep,
-            onStepCancel: _prevStep,
+            onStepCancel: () => setState(() => _currentStep -= 1),
             steps: [
               Step(
                 title: const Text("Identity", style: TextStyle(color: Colors.white)),
-                content: Column(
-                  children: [
-                    _buildTextField(_fullNameController, "Full Name"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_phoneController, "Phone Number"), // <-- ADDED HERE
-                    const SizedBox(height: 16),
-                    _buildTextField(_nationalIdController, "National ID Number"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_licenseController, "Driver's License Number"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_emergencyController, "Emergency Contact (Phone)"),
-                  ],
-                ),
+                content: Column(children: [
+                  _buildTextField(_fullNameController, "Full Name"),
+                  _buildTextField(_phoneController, "Phone Number"),
+                  _buildTextField(_nationalIdController, "National ID"),
+                  _buildTextField(_licenseController, "Driver's License"),
+                  _buildTextField(_emergencyController, "Emergency Contact"),
+                ]),
                 isActive: _currentStep >= 0,
               ),
               Step(
                 title: const Text("Documents", style: TextStyle(color: Colors.white)),
-                content: Column(
-                  children: [
-                    const Text("Upload Driver's License Photo", style: TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    _buildUploadButton("Take Photo of License"),
-                  ],
-                ),
+                content: Column(children: [
+                  _buildUploadButton("Upload Driver's License", 'license', _licenseImage),
+                  _buildUploadButton("Upload Insurance Document", 'insurance', _insuranceImage),
+                ]),
                 isActive: _currentStep >= 1,
               ),
               Step(
                 title: const Text("Motorcycle Details", style: TextStyle(color: Colors.white)),
-                content: Column(
-                  children: [
-                    _buildTextField(_bikeMakeController, "Make (e.g., Boxer)"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_bikeModelController, "Model (e.g., 150)"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_bikeColorController, "Color"),
-                    const SizedBox(height: 16),
-                    _buildTextField(_bikeRegController, "Registration (e.g., KMDA 123A)"),
-                  ],
-                ),
+                content: Column(children: [
+                  _buildTextField(_bikeMakeController, "Make"),
+                  _buildTextField(_bikeModelController, "Model"),
+                  _buildTextField(_bikeColorController, "Color"),
+                  _buildTextField(_bikeRegController, "Registration"),
+                  _buildUploadButton("Upload Bike Photo", 'bike', _bikeImage),
+                ]),
                 isActive: _currentStep >= 2,
               ),
               Step(
                 title: const Text("Selfie Verification", style: TextStyle(color: Colors.white)),
-                content: Column(
-                  children: [
-                    const Text("Please take a clear selfie for customer safety.", style: TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 16),
-                    _buildUploadButton("Take Selfie"),
-                  ],
-                ),
+                content: Column(children: [
+                  const Text("Please upload a clear selfie.", style: TextStyle(color: Colors.grey)),
+                  _buildUploadButton("Upload Selfie", 'selfie', _selfieImage),
+                ]),
                 isActive: _currentStep >= 3,
               ),
             ],
@@ -164,35 +162,34 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFCD34D))),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.grey), enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))),
       ),
     );
   }
 
-  Widget _buildUploadButton(String text) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Camera simulation: Image captured!"), backgroundColor: Colors.blue),
-          );
-        },
-        icon: const Icon(Icons.camera_alt, color: Colors.black),
-        label: Text(text, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFCD34D),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+  Widget _buildUploadButton(String text, String type, File? image) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          children: [
+            Icon(image != null ? Icons.check_circle : Icons.upload_file, color: image != null ? Colors.green : const Color(0xFFFCD34D)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(text, style: const TextStyle(color: Colors.white))),
+            TextButton(
+              onPressed: () => _pickImage(type),
+              child: Text(image != null ? "Change" : "Select", style: const TextStyle(color: Color(0xFFFCD34D))),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-

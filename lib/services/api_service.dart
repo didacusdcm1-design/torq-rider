@@ -1,4 +1,5 @@
 ﻿import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -165,5 +166,24 @@ class ApiService {
       return {'success': false, 'message': 'Network error'};
     }
   }
+  static Future<String?> uploadImage(File imageFile) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/riders/upload'),
+      );
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      
+      final response = await request.send();
+      final responseData = await http.Response.fromStream(response);
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(responseData.body);
+        return data['url'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }
-
