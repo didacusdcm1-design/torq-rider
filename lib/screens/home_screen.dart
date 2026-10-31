@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -273,10 +273,22 @@ class _HomeScreenState extends State<HomeScreen> {
       buttonText = "ACCEPT TRIP";
       onPressed = () async {
         setState(() => _isLoading = true);
-        await ApiService.acceptTrip(_activeTrip!['id']);
-        // Refresh the trip after accepting
-        await _checkForTrips();
-        setState(() => _isLoading = false);
+        final success = await ApiService.acceptTrip(_activeTrip!['id']);
+        
+        if (mounted) {
+          if (success) {
+            // INSTANTLY change the status to IN_PROGRESS so the UI moves to the next stage
+            setState(() {
+              _activeTrip!['status'] = 'IN_PROGRESS';
+              _isLoading = false;
+            });
+          } else {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Failed to accept trip. Try again."), backgroundColor: Colors.red),
+            );
+          }
+        }
       };
     } else if (status == 'IN_PROGRESS') {
       title = "Navigating to Pickup";
