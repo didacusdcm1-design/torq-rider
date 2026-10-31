@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -125,11 +125,14 @@ class ApiService {
     }
   }
 
-  static Future<bool> acceptTrip(String tripId) async {
+    static Future<bool> acceptTrip(String tripId) async {
     try {
-      final response = await http.patch(Uri.parse('$baseUrl/trips/accept/$tripId'));
+      // Using the force-accept route which we know works
+      final response = await http.get(Uri.parse('$baseUrl/force-accept/$tripId'));
+      print("ACCEPT RESPONSE: ${response.statusCode} - ${response.body}");
       return response.statusCode == 200;
     } catch (e) {
+      print("ACCEPT ERROR: $e");
       return false;
     }
   }
@@ -194,3 +197,4 @@ class ApiService {
     }
   }
 }// Force rebuild 10/30/2026 14:03:34
+
