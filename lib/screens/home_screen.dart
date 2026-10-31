@@ -131,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Please select a reason for cancelling this trip. Your cancellation will be recorded in the TORQ system.", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const Text("Please select a reason for cancelling this trip.", style: TextStyle(color: Colors.grey, fontSize: 13)),
                   const SizedBox(height: 16),
                   ...riderReasons.map((reason) => RadioListTile<String>(
                     title: Text(reason, style: const TextStyle(color: Colors.white, fontSize: 14)),
@@ -272,8 +272,11 @@ class _HomeScreenState extends State<HomeScreen> {
       title = "New Trip Request";
       buttonText = "ACCEPT TRIP";
       onPressed = () async {
+        setState(() => _isLoading = true);
         await ApiService.acceptTrip(_activeTrip!['id']);
-        _checkForTrips();
+        // Refresh the trip after accepting
+        await _checkForTrips();
+        setState(() => _isLoading = false);
       };
     } else if (status == 'IN_PROGRESS') {
       title = "Navigating to Pickup";
@@ -342,9 +345,9 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             height: 60,
             child: ElevatedButton.icon(
-              onPressed: onPressed,
-              icon: Icon(icon, color: Colors.black),
-              label: Text(buttonText, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
+              onPressed: _isLoading ? null : onPressed,
+              icon: _isLoading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black)) : Icon(icon, color: Colors.black),
+              label: Text(_isLoading ? "Processing..." : buttonText, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFCD34D),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -371,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildTopBar(),
             Expanded(
-              child: _isLoading 
+              child: _isLoading && _activeTrip == null
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFFFCD34D)))
                 : _activeTrip != null 
                   ? _buildActiveTripState() 
@@ -382,4 +385,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}// Force rebuild 10/30/2026 14:03:34
+}
