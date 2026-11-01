@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
 
@@ -14,7 +13,7 @@ class _InboxScreenState extends State<InboxScreen> {
   List<dynamic> _notifications = [];
   bool _isLoading = true;
 
-  final String apiUrl = 'https://torq-api.onrender.com';
+  final String apiUrl = 'https://torq-backend.onrender.com'; // Using your backend URL
 
   @override
   void initState() {
@@ -25,10 +24,7 @@ class _InboxScreenState extends State<InboxScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Replace this with your actual logged-in rider ID from SharedPreferences
-      const String userId = "YOUR_RIDER_USER_ID_HERE"; 
-      
-      final response = await http.get(Uri.parse('$apiUrl/notifications/user/$userId'));
+      final response = await http.get(Uri.parse('$apiUrl/notifications/my-notifications'));
       
       if (response.statusCode == 200) {
         setState(() {
