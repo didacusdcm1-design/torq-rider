@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../services/auth_service.dart'; // Assuming you store user ID here
+
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -25,9 +25,8 @@ class _InboxScreenState extends State<InboxScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      // NOTE: In a real app, you would get the logged-in user's ID from your AuthService
-      // For now, let's use a placeholder or fetch from your existing AuthService
-      final userId = await AuthService.getUserId(); 
+      // TODO: Replace this with your actual logged-in rider ID from SharedPreferences
+      const String userId = "YOUR_RIDER_USER_ID_HERE"; 
       
       final response = await http.get(Uri.parse('$apiUrl/notifications/user/$userId'));
       
