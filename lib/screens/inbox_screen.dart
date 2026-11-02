@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // Added for session
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -13,7 +14,7 @@ class _InboxScreenState extends State<InboxScreen> {
   List<dynamic> _notifications = [];
   bool _isLoading = true;
 
-  final String apiUrl = 'https://torq-backend.onrender.com'; // Using your backend URL
+  final String apiUrl = 'https://torq-backend.onrender.com';
 
   @override
   void initState() {
@@ -24,8 +25,20 @@ class _InboxScreenState extends State<InboxScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(Uri.parse('$apiUrl/notifications/my-notifications'));
-      
+      // 1. Fetch the logged-in user's ID
+      final prefs = await SharedPreferences.getInstance();
+      // Note: Make sure 'userId' matches exactly what you saved in your login screen!
+      final String? userId = prefs.getString('userId') ?? prefs.getString('user_id');
+
+      if (userId == null) {
+        debugPrint('No userId found in SharedPreferences.');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Pass the ID to the API
+      final response = await http.get(Uri.parse('$apiUrl/notifications/user/$userId'));
+
       if (response.statusCode == 200) {
         setState(() {
           _notifications = jsonDecode(response.body);
@@ -62,7 +75,7 @@ class _InboxScreenState extends State<InboxScreen> {
               itemBuilder: (context, index) {
                 final alert = _notifications[index];
                 final isRead = alert['isRead'] ?? false;
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
@@ -75,8 +88,8 @@ class _InboxScreenState extends State<InboxScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        Icons.notifications, 
-                        color: isRead ? Colors.grey : const Color(0xFFFCD34D), 
+                        Icons.notifications,
+                        color: isRead ? Colors.grey : const Color(0xFFFCD34D),
                         size: 28
                       ),
                       const SizedBox(width: 16),
@@ -85,19 +98,19 @@ class _InboxScreenState extends State<InboxScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              alert['title'] ?? 'TORQ Update', 
+                              alert['title'] ?? 'TORQ Update',
                               style: TextStyle(
-                                color: isRead ? Colors.grey : const Color(0xFFFCD34D), 
-                                fontSize: 14, 
+                                color: isRead ? Colors.grey : const Color(0xFFFCD34D),
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold
                               )
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              alert['message'] ?? 'Notification', 
+                              alert['message'] ?? 'Notification',
                               style: TextStyle(
-                                color: isRead ? Colors.grey : Colors.white, 
-                                fontSize: 16, 
+                                color: isRead ? Colors.grey : Colors.white,
+                                fontSize: 16,
                                 fontWeight: isRead ? FontWeight.normal : FontWeight.w500
                               )
                             ),
