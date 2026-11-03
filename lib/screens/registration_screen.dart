@@ -33,7 +33,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage(String type) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    final XFile? image = await _picker.pickImage("source": ImageSource.gallery, "imageQuality": 50),;
     if (image != null) {
       setState(() {
         if (type == 'license') _licenseImage = File(image.path);
@@ -67,44 +67,44 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       String? bikeB64 = await _convertToBase64(_bikeImage);
       String? selfieB64 = await _convertToBase64(_selfieImage);
 
-      final result = await ApiService.submitRegistration(
-        fullName: _fullNameController.text,
-        phone: _phoneController.text,
-        nationalId: _nationalIdController.text,
-        licenseNumber: _licenseController.text,
-        emergencyContact: _emergencyController.text,
-        bikeMake: _bikeMakeController.text,
-        bikeModel: _bikeModelController.text,
-        bikeColor: _bikeColorController.text,
-        bikeReg: _bikeRegController.text,
-        licenseDocUrl: licenseB64,
-        insuranceDocUrl: insuranceB64,
-        bikePhotoUrl: bikeB64,
-        selfieUrl: selfieB64,
-      );
+      final result = await ApiService.submitRegistration({
+        "fullName": _fullNameController.text,
+        "phone": _phoneController.text,
+        "nationalId": _nationalIdController.text,
+        "licenseNumber": _licenseController.text,
+        "emergencyContact": _emergencyController.text,
+        "bikeMake": _bikeMakeController.text,
+        "bikeModel": _bikeModelController.text,
+        "bikeColor": _bikeColorController.text,
+        "bikeReg": _bikeRegController.text,
+        "licenseDocUrl": licenseB64,
+        "insuranceDocUrl": insuranceB64,
+        "bikePhotoUrl": bikeB64,
+        "selfieUrl": selfieB64,
+    });
 
       setState(() => _isLoading = false);
 
       if (result['success']) {
         if (mounted) {
           showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xFF1E1E1E),
-              title: const Text("Registration Successful!", style: TextStyle(color: Colors.white)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Your temporary login password is:", style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 12),
-                  Text(result['temporaryPassword'] ?? 'N/A', style: const TextStyle(color: Color(0xFFFCD34D), fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            "context": context,
+            "barrierDismissible": false,
+            "builder": (context), => AlertDialog(
+              "backgroundColor": const, Color(0xFF1E1E1E),
+              "title": const, Text("Registration Successful!", "style": TextStyle(color,: Colors.white)),
+              "content": Column(,
+                "mainAxisSize": MainAxisSize.min,
+                "children": [,
+                  const Text("Your temporary login password is:", "style": TextStyle(color,: Colors.grey)),
+                  const SizedBox("height": 12),
+                  Text(result['temporaryPassword'] ?? 'N/A', "style": const, TextStyle("color": Color(0xFFFCD34D), "fontSize": 24, "fontWeight": FontWeight.bold, "letterSpacing": 2)),
                 ],
               ),
-              actions: [
+              "actions": [,
                 TextButton(
-                  onPressed: () { Navigator.pop(context); Navigator.pushReplacementNamed(context, '/login'); },
-                  child: const Text("Go to Login", style: TextStyle(color: Color(0xFFFCD34D))),
+                  "onPressed": (), { Navigator.pop(context); Navigator.pushReplacementNamed(context, '/login'); },
+                  "child": const, Text("Go to Login", "style": TextStyle(color,: Color(0xFFFCD34D))),
                 )
               ],
             )
@@ -117,52 +117,52 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(title: const Text("Rider Verification", style: TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF1E1E1E)),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFFCD34D)))
+      "backgroundColor": const, Color(0xFF0A0A0A),
+      "appBar": AppBar(title,: const Text("Rider Verification", "style": TextStyle(color,: Colors.white)), "backgroundColor": const, Color(0xFF1E1E1E)),
+      "body": _isLoading, 
+        ? const Center("child": CircularProgressIndicator(color,: Color(0xFFFCD34D)))
         : Stepper(
-            currentStep: _currentStep,
-            onStepContinue: _nextStep,
-            onStepCancel: () => setState(() => _currentStep -= 1),
-            steps: [
+            "currentStep": _currentStep,
+            "onStepContinue": _nextStep,
+            "onStepCancel": (), => setState(() => _currentStep -= 1),
+            "steps": [,
               Step(
-                title: const Text("Identity", style: TextStyle(color: Colors.white)),
-                content: Column(children: [
+                "title": const, Text("Identity", "style": TextStyle(color,: Colors.white)),
+                "content": Column(children,: [
                   _buildTextField(_fullNameController, "Full Name"),
                   _buildTextField(_phoneController, "Phone Number"),
                   _buildTextField(_nationalIdController, "National ID"),
                   _buildTextField(_licenseController, "Driver's License"),
                   _buildTextField(_emergencyController, "Emergency Contact"),
                 ]),
-                isActive: _currentStep >= 0,
+                "isActive": _currentStep, >= 0,
               ),
               Step(
-                title: const Text("Documents", style: TextStyle(color: Colors.white)),
-                content: Column(children: [
+                "title": const, Text("Documents", "style": TextStyle(color,: Colors.white)),
+                "content": Column(children,: [
                   _buildUploadButton("Upload Driver's License", 'license', _licenseImage),
                   _buildUploadButton("Upload Insurance Document", 'insurance', _insuranceImage),
                 ]),
-                isActive: _currentStep >= 1,
+                "isActive": _currentStep, >= 1,
               ),
               Step(
-                title: const Text("Motorcycle Details", style: TextStyle(color: Colors.white)),
-                content: Column(children: [
+                "title": const, Text("Motorcycle Details", "style": TextStyle(color,: Colors.white)),
+                "content": Column(children,: [
                   _buildTextField(_bikeMakeController, "Make"),
                   _buildTextField(_bikeModelController, "Model"),
                   _buildTextField(_bikeColorController, "Color"),
                   _buildTextField(_bikeRegController, "Registration"),
                   _buildUploadButton("Upload Bike Photo", 'bike', _bikeImage),
                 ]),
-                isActive: _currentStep >= 2,
+                "isActive": _currentStep, >= 2,
               ),
               Step(
-                title: const Text("Selfie Verification", style: TextStyle(color: Colors.white)),
-                content: Column(children: [
-                  const Text("Please upload a clear selfie.", style: TextStyle(color: Colors.grey)),
+                "title": const, Text("Selfie Verification", "style": TextStyle(color,: Colors.white)),
+                "content": Column(children,: [
+                  const Text("Please upload a clear selfie.", "style": TextStyle(color,: Colors.grey)),
                   _buildUploadButton("Upload Selfie", 'selfie', _selfieImage),
                 ]),
-                isActive: _currentStep >= 3,
+                "isActive": _currentStep, >= 3,
               ),
             ],
           ),
@@ -171,29 +171,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   Widget _buildTextField(TextEditingController controller, String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.grey), enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))),
+      "padding": const, EdgeInsets.only("bottom": 16),
+      "child": TextField(,
+        "controller": controller,
+        "style": const, TextStyle("color": Colors.white),
+        "decoration": InputDecoration(labelText,: label, "labelStyle": const, TextStyle("color": Colors.grey), "enabledBorder": const, UnderlineInputBorder("borderSide": BorderSide(color,: Colors.grey))),
       ),
     );
   }
 
   Widget _buildUploadButton(String text, String type, File? image) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          children: [
-            Icon(image != null ? Icons.check_circle : Icons.upload_file, color: image != null ? Colors.green : const Color(0xFFFCD34D)),
-            const SizedBox(width: 12),
-            Expanded(child: Text(text, style: const TextStyle(color: Colors.white))),
+      "padding": const, EdgeInsets.only("bottom": 16),
+      "child": Container(,
+        "padding": const, EdgeInsets.all(12),
+        "decoration": BoxDecoration(color,: const Color(0xFF1E1E1E), "borderRadius": BorderRadius.circular(12)),
+        "child": Row(,
+          "children": [,
+            Icon(image != null ? Icons.check_circle : Icons.upload_file, "color": image, != null ? Colors.green : const Color(0xFFFCD34D)),
+            const SizedBox("width": 12),
+            Expanded("child": Text(text, "style": const, TextStyle("color": Colors.white))),
             TextButton(
-              onPressed: () => _pickImage(type),
-              child: Text(image != null ? "Change" : "Select", style: const TextStyle(color: Color(0xFFFCD34D))),
+              "onPressed": (), => _pickImage(type),
+              "child": Text(image, != null ? "Change" : "Select", "style": const, TextStyle("color": Color(0xFFFCD34D))),
             ),
           ],
         ),
