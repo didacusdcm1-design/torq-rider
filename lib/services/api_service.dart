@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Replace with your actual backend URL if it changes
   static const String baseUrl = 'https://torq-backend.onrender.com';
 
   static Future<Map<String, dynamic>> login(String phone, String password) async {
@@ -39,6 +38,19 @@ class ApiService {
     }
   }
 
+  static Future<bool> toggleOnlineStatus(bool isOnline) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/riders/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'isOnline': isOnline}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<List<dynamic>> getActiveTrips() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/trips/rider/active'));
@@ -56,6 +68,69 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  static Future<bool> acceptTrip(String tripId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/trips/$tripId/accept'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> updateTripStatus(String tripId, String status) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/trips/$tripId/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': status}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> completeTrip(String tripId, String pin) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/trips/$tripId/complete'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'pin': pin}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> cancelTrip(String tripId, String reason) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/trips/$tripId/cancel'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'reason': reason}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> submitRegistration(Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register/rider'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
     }
   }
 }
