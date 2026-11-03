@@ -68,20 +68,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       String? selfieB64 = await _convertToBase64(_selfieImage);
 
       final result = await ApiService.submitRegistration({
-        "fullName": _fullNameController.text,
-        "phone": _phoneController.text,
-        "nationalId": _nationalIdController.text,
-        "licenseNumber": _licenseController.text,
-        "emergencyContact": _emergencyController.text,
-        "bikeMake": _bikeMakeController.text,
-        "bikeModel": _bikeModelController.text,
-        "bikeColor": _bikeColorController.text,
-        "bikeReg": _bikeRegController.text,
-        "licenseDocUrl": licenseB64,
-        "insuranceDocUrl": insuranceB64,
-        "bikePhotoUrl": bikeB64,
-        "selfieUrl": selfieB64,
-    });
+          'fullName': _fullNameController.text,
+          'phone': _phoneController.text,
+          'nationalId': _nationalIdController.text,
+          'licenseNumber': _licenseController.text,
+        });
 
       setState(() => _isLoading = false);
 
@@ -98,7 +89,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 "children": [,
                   const Text("Your temporary login password is:", "style": TextStyle(color,: Colors.grey)),
                   const SizedBox("height": 12),
-                  Text(result['temporaryPassword'] ?? 'N/A', "style": const, TextStyle("color": Color(0xFFFCD34D), "fontSize": 24, "fontWeight": FontWeight.bold, "letterSpacing": 2)),
+                  Text(result['temporaryPassword'] ?? 'N/A', "style": const, TextStyle(color: Color(0xFFFCD34D), "fontSize": 24, "fontWeight": FontWeight.bold, "letterSpacing": 2)),
                 ],
               ),
               "actions": [,
@@ -174,8 +165,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       "padding": const, EdgeInsets.only("bottom": 16),
       "child": TextField(,
         "controller": controller,
-        "style": const, TextStyle("color": Colors.white),
-        "decoration": InputDecoration(labelText,: label, "labelStyle": const, TextStyle("color": Colors.grey), "enabledBorder": const, UnderlineInputBorder("borderSide": BorderSide(color,: Colors.grey))),
+        "style": const, TextStyle(color: Colors.white),
+        "decoration": InputDecoration(labelText,: label, "labelStyle": const, TextStyle(color: Colors.grey), "enabledBorder": const, UnderlineInputBorder("borderSide": BorderSide(color,: Colors.grey))),
       ),
     );
   }
@@ -188,12 +179,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         "decoration": BoxDecoration(color,: const Color(0xFF1E1E1E), "borderRadius": BorderRadius.circular(12)),
         "child": Row(,
           "children": [,
-            Icon(image != null ? Icons.check_circle : Icons.upload_file, "color": image, != null ? Colors.green : const Color(0xFFFCD34D)),
+            Icon(image != null ? Icons.check_circle : Icons.upload_file, color: image, != null ? Colors.green : const Color(0xFFFCD34D)),
             const SizedBox("width": 12),
-            Expanded("child": Text(text, "style": const, TextStyle("color": Colors.white))),
+            Expanded(child: Text(text, "style": const, TextStyle(color: Colors.white))),
             TextButton(
               "onPressed": (), => _pickImage(type),
-              "child": Text(image, != null ? "Change" : "Select", "style": const, TextStyle("color": Color(0xFFFCD34D))),
+              child: Text(image, != null ? "Change" : "Select", "style": const, TextStyle(color: Color(0xFFFCD34D))),
             ),
           ],
         ),
