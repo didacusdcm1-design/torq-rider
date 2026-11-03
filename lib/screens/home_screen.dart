@@ -216,16 +216,41 @@ class _HomeScreenState extends State<HomeScreen> {
               Text("TORQ", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _activeTrip != null ? const Color(0xFFFCD34D) : Colors.green,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _activeTrip != null ? "ON TRIP" : "ONLINE",
-              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
-            ),
+          Row(
+            children: [
+              // --- NEW CHAT BUTTON ---
+              if (_activeTrip != null) ...[
+                IconButton(
+                  icon: const Icon(Icons.chat_bubble, color: Color(0xFFFCD34D)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RiderChatScreen(
+                          tripId: _activeTrip!['id'],
+                          senderId: _activeTrip!['riderId'] ?? 'rider_id',
+                          receiverId: _activeTrip!['customerId'] ?? 'customer_id',
+                          customerName: _activeTrip!['customer']?['firstName'] ?? 'Customer',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+              // -----------------------
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _activeTrip != null ? const Color(0xFFFCD34D) : Colors.green,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _activeTrip != null ? "ON TRIP" : "ONLINE",
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ),
+            ],
           )
         ],
       ),
