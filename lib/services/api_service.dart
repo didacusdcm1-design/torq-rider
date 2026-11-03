@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -83,8 +83,9 @@ class ApiService {
 
   static Future<bool> updateTripStatus(String tripId, String status) async {
     try {
+      // Backend expects PATCH /trips/status/:id
       final response = await http.patch(
-        Uri.parse('$baseUrl/trips/$tripId/status'),
+        Uri.parse('$baseUrl/trips/status/$tripId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'status': status}),
       );
