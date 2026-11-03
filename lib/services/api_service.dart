@@ -22,7 +22,7 @@ class ApiService {
         // 1. Save the JWT Token
         await prefs.setString('jwt_token', data['access_token']);
         
-        // 2. Save the User ID (THE FIX)
+        // 2. Save the User ID (THE FIX FOR INBOX)
         if (data['user'] != null && data['user']['id'] != null) {
           await prefs.setString('userId', data['user']['id'].toString());
         }
@@ -73,9 +73,7 @@ class ApiService {
 
   static Future<bool> acceptTrip(String tripId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/trips/$tripId/accept'),
-      );
+      final response = await http.post(Uri.parse('$baseUrl/trips/$tripId/accept'));
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -95,42 +93,67 @@ class ApiService {
     }
   }
 
-  static Future<bool> completeTrip(String tripId, String pin) async {
+  // Fixed to return a Map (because home_screen.dart checks result['success'])
+  static Future<Map<String, dynamic>> completeTrip(String tripId, String pin) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/trips/$tripId/complete'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'pin': pin}),
       );
-      return response.statusCode == 200;
+      return {
+        'success': response.statusCode == 200 || response.statusCode == 201,
+        'message': response.statusCode == 200 ? 'Trip completed' : 'Failed to complete trip'
+      };
     } catch (e) {
-      return false;
+      return {'success': false, 'message': 'Network error'};
     }
   }
 
-  static Future<bool> cancelTrip(String tripId, String reason) async {
+  // Fixed to take 4 arguments (matching home_screen.dart)
+  static Future<Map<String, dynamic>> cancelTrip(String tripId, String cancelledBy, String reason, String description) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/trips/$tripId/cancel'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'reason': reason}),
+        body: jsonEncode({
+          'cancelledBy': cancelledBy,
+          'reason': reason,
+          'description': description,
+        }),
       );
-      return response.statusCode == 200;
+      return {
+        'success': response.statusCode == 200 || response.statusCode == 201,
+        'message': response.statusCode == 200 ? 'Trip cancelled' : 'Failed to cancel trip'
+      };
     } catch (e) {
-      return false;
+      return {'success': false, 'message': 'Network error'};
     }
   }
 
-  static Future<bool> submitRegistration(Map<String, dynamic> data) async {
+  // Fixed to use named arguments (matching registration_screen.dart)
+  static Future<Map<String, dynamic>> submitRegistration({
+    required String fullName,
+    required String phone,
+    required String nationalId,
+    // Add any other fields your registration screen passes (e.g., email, password)
+  }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register/rider'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(data),
+        body: jsonEncode({
+          'fullName': fullName,
+          'phone': phone,
+          'nationalId': nationalId,
+        }),
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      return {
+        'success': response.statusCode == 200 || response.statusCode == 201,
+        'message': response.statusCode == 200 ? 'Registration successful' : 'Registration failed'
+      };
     } catch (e) {
-      return false;
+      return {'success': false, 'message': 'Network error'};
     }
   }
 }
