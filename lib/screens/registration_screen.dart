@@ -25,11 +25,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final String apiUrl = 'https://torq-backend.onrender.com';
   final ImagePicker _picker = ImagePicker();
 
-  File? _idImage;
-  File? _licenseImage;
-  File? _bikeImage;
-  File? _passportImage;
-  File? _insuranceImage;
+  // Store XFile instead of File for Web compatibility
+  XFile? _idImage;
+  XFile? _licenseImage;
+  XFile? _bikeImage;
+  XFile? _passportImage;
+  XFile? _insuranceImage;
 
   void _nextStep() {
     if (_currentStep < 2) {
@@ -49,11 +50,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
     if (pickedFile != null) {
       setState(() {
-        if (type == 'id') _idImage = File(pickedFile.path);
-        if (type == 'license') _licenseImage = File(pickedFile.path);
-        if (type == 'bike') _bikeImage = File(pickedFile.path);
-        if (type == 'passport') _passportImage = File(pickedFile.path);
-        if (type == 'insurance') _insuranceImage = File(pickedFile.path);
+        if (type == 'id') _idImage = pickedFile;
+        if (type == 'license') _licenseImage = pickedFile;
+        if (type == 'bike') _bikeImage = pickedFile;
+        if (type == 'passport') _passportImage = pickedFile;
+        if (type == 'insurance') _insuranceImage = pickedFile;
       });
     }
   }
@@ -77,11 +78,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       request.fields['plateNumber'] = _plateController.text.trim();
       request.fields['bikeModel'] = _modelController.text.trim();
 
-      request.files.add(await http.MultipartFile.fromPath('nationalId', _idImage!.path));
-      request.files.add(await http.MultipartFile.fromPath('driversLicense', _licenseImage!.path));
-      request.files.add(await http.MultipartFile.fromPath('bikePicture', _bikeImage!.path));
-      request.files.add(await http.MultipartFile.fromPath('passportPhoto', _passportImage!.path));
-      request.files.add(await http.MultipartFile.fromPath('insurance', _insuranceImage!.path));
+      // Read bytes for Web compatibility
+      var idBytes = await _idImage!.readAsBytes();
+      var licenseBytes = await _licenseImage!.readAsBytes();
+      var bikeBytes = await _bikeImage!.readAsBytes();
+      var passportBytes = await _passportImage!.readAsBytes();
+      var insuranceBytes = await _insuranceImage!.readAsBytes();
+
+      request.files.add(http.MultipartFile.fromBytes('nationalId', idBytes, filename: 'id.jpg'));
+      request.files.add(http.MultipartFile.fromBytes('driversLicense', licenseBytes, filename: 'license.jpg'));
+      request.files.add(http.MultipartFile.fromBytes('bikePicture', bikeBytes, filename: 'bike.jpg'));
+      request.files.add(http.MultipartFile.fromBytes('passportPhoto', passportBytes, filename: 'passport.jpg'));
+      request.files.add(http.MultipartFile.fromBytes('insurance', insuranceBytes, filename: 'insurance.jpg'));
 
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 60),
@@ -139,7 +147,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   minHeight: 8,
                 ),
                 const SizedBox(height: 32),
-                
                 Expanded(
                   child: IndexedStack(
                     index: _currentStep,
@@ -150,7 +157,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ],
                   ),
                 ),
-
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -214,7 +220,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           const SizedBox(height: 8),
           const Text("Upload the required documents and photos.", style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
-          
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -235,7 +240,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  Widget _buildUploadBox(String label, IconData icon, File? imageFile, VoidCallback onTap) {
+  Widget _buildUploadBox(String label, IconData icon, XFile? imageFile, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -246,9 +251,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             color: imageFile != null ? const Color(0xFF4ADE80) : Colors.grey.withOpacity(0.3),
             width: imageFile != null ? 2 : 1,
           ),
-          image: imageFile != null 
-              ? DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover, colorFilter: const ColorFilter.mode(Colors.black45, BlendMode.darken))
-              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
