@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart'; // Added for session
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/socket_service.dart';
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -20,14 +21,25 @@ class _InboxScreenState extends State<InboxScreen> {
   void initState() {
     super.initState();
     _loadNotifications();
+    _listenToRealTimeNotifications();
+  }
+
+  // Listen for WebSocket events to auto-update the UI
+  void _listenToRealTimeNotifications() {
+    final socket = SocketService().socket;
+    if (socket != null) {
+      socket.on('newNotification', (data) {
+        debugPrint('Real-time notification received in Inbox!');
+        _loadNotifications(); // Reload the list from DB when a new one arrives
+      });
+    }
   }
 
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      // 1. Fetch the logged-in user's ID
       final prefs = await SharedPreferences.getInstance();
-      // Note: Make sure 'userId' matches exactly what you saved in your login screen!
+      // Make sure 'userId' matches exactly what you saved in your login screen!
       final String? userId = prefs.getString('userId') ?? prefs.getString('user_id');
 
       if (userId == null) {
@@ -36,7 +48,6 @@ class _InboxScreenState extends State<InboxScreen> {
         return;
       }
 
-      // 2. Pass the ID to the API
       final response = await http.get(Uri.parse('$apiUrl/notifications/user/$userId'));
 
       if (response.statusCode == 200) {
