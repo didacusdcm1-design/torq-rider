@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/fcm_service.dart';
 import 'services/socket_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -8,7 +10,14 @@ import 'screens/inbox_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/registration_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    await FcmService().initialize();
+  } catch (e) {
+    print('Firebase init error: $e');
+  }
   // TODO: Replace 'test_user_id' with actual logged-in user ID from SharedPreferences
   SocketService().connect('test_user_id');
   runApp(const TorqRiderApp());

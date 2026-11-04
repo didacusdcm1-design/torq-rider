@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "354873930578",
+    "project_id": "torq-64ccd",
+    "storage_bucket": "torq-64ccd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354873930578:android:756f34dd4644bc94f8008b",
+        "android_client_info": {
+          "package_name": "com.example.torq_rider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCk_oIUKZU7uCvoAkVuSsm3lyK4cnMubkE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
