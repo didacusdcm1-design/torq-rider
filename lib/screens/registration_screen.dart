@@ -87,7 +87,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       request.files.add(await http.MultipartFile.fromPath('passportPhoto', _passportImage!.path));
       request.files.add(await http.MultipartFile.fromPath('insurance', _insuranceImage!.path));
 
-      var response = await request.send();
+      var streamedResponse = await request.send().timeout(const Duration(seconds: 60), onTimeout: () { throw Exception('Server is waking up. Please try again.'); });
+      var response = streamedResponse;
       var responseData = await response.stream.bytesToString();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
