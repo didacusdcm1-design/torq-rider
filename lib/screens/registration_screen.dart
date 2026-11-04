@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -22,6 +23,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _modelController = TextEditingController();
 
   final String apiUrl = 'https://torq-backend.onrender.com';
+  final ImagePicker _picker = ImagePicker();
+
+  // Store selected files
+  File? _idImage;
+  File? _licenseImage;
+  File? _bikeImage;
+  File? _passportImage;
+  File? _insuranceImage;
 
   void _nextStep() {
     if (_currentStep < 2) {
@@ -37,21 +46,49 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  Future<void> _pickImage(String type) async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (pickedFile != null) {
+      setState(() {
+        if (type == 'id') _idImage = File(pickedFile.path);
+        if (type == 'license') _licenseImage = File(pickedFile.path);
+        if (type == 'bike') _bikeImage = File(pickedFile.path);
+        if (type == 'passport') _passportImage = File(pickedFile.path);
+        if (type == 'insurance') _insuranceImage = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _submitRegistration() async {
+    // Basic validation
+    if (_idImage == null || _licenseImage == null || _bikeImage == null || _passportImage == null || _insuranceImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please upload all required documents.")),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     
     try {
-      final response = await http.post(
-        Uri.parse('$apiUrl/riders/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': _nameController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'email': _emailController.text.trim(),
-          'plateNumber': _plateController.text.trim(),
-          'bikeModel': _modelController.text.trim(),
-        }),
-      );
+      // 1. Send text data and images to the backend
+      var request = http.MultipartRequest('POST', Uri.parse('$apiUrl/riders/register'));
+      
+      request.fields['name'] = _nameController.text.trim();
+      request.fields['phone'] = _phoneController.text.trim();
+      request.fields['email'] = _emailController.text.trim();
+      request.fields['plateNumber'] = _plateController.text.trim();
+      request.fields['bikeModel'] = _modelController.text.trim();
+
+      // Attach images
+      request.files.add(await http.MultipartFile.fromPath('nationalId', _idImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('driversLicense', _licenseImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('bikePicture', _bikeImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('passportPhoto', _passportImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('insurance', _insuranceImage!.path));
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() {
@@ -59,9 +96,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           _isLoading = false;
         });
       } else {
+        debugPrint('Server error: $responseData');
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration failed. Please try again.")),
+          const SnackBar(content: Text("Registration failed. Check console.")),
         );
       }
     } catch (e) {
@@ -75,9 +113,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isSuccess) {
-      return _buildSuccessScreen();
-    }
+    if (_isSuccess) return _buildSuccessScreen();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
@@ -179,7 +215,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           const Text("Upload the required documents and photos.", style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           
-          // 2-Column Grid for uploads
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -188,11 +223,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             mainAxisSpacing: 16,
             childAspectRatio: 1.0,
             children: [
-              _buildUploadBox("National ID", Icons.badge),
-              _buildUploadBox("Driver's License", Icons.drive_eta),
-              _buildUploadBox("Bike Picture", Icons.motorcycle),
-              _buildUploadBox("Passport Photo", Icons.portrait),
-              _buildUploadBox("Insurance", Icons.shield),
+              _buildUploadBox("National ID", Icons.badge, _idImage, () => _pickImage('id')),
+              _buildUploadBox("Driver's License", Icons.drive_eta, _licenseImage, () => _pickImage('license')),
+              _buildUploadBox("Bike Picture", Icons.motorcycle, _bikeImage, () => _pickImage('bike')),
+              _buildUploadBox("Passport Photo", Icons.portrait, _passportImage, () => _pickImage('passport')),
+              _buildUploadBox("Insurance", Icons.shield, _insuranceImage, () => _pickImage('insurance')),
             ],
           ),
         ],
@@ -200,27 +235,32 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  Widget _buildUploadBox(String label, IconData icon) {
+  Widget _buildUploadBox(String label, IconData icon, File? imageFile, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () { 
-        // TODO: Image Picker Logic will go here
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$label upload coming soon!")),
-        );
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
+          border: Border.all(
+            color: imageFile != null ? const Color(0xFF4ADE80) : Colors.grey.withOpacity(0.3),
+            width: imageFile != null ? 2 : 1,
+          ),
+          image: imageFile != null 
+              ? DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover, colorFilter: const ColorFilter.mode(Colors.black45, BlendMode.darken))
+              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: const Color(0xFFFCD34D), size: 32),
+            Icon(
+              imageFile != null ? Icons.check_circle : icon, 
+              color: imageFile != null ? const Color(0xFF4ADE80) : const Color(0xFFFCD34D), 
+              size: 32,
+            ),
             const SizedBox(height: 8),
             Text(
-              label, 
+              imageFile != null ? "Uploaded" : label, 
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
             ),
