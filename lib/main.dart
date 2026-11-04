@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'services/socket_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/trips_screen.dart';
@@ -8,6 +9,8 @@ import 'screens/account_screen.dart';
 import 'screens/registration_screen.dart';
 
 void main() {
+  // TODO: Replace 'test_user_id' with actual logged-in user ID from SharedPreferences
+  SocketService().connect('test_user_id');
   runApp(const TorqRiderApp());
 }
 
