@@ -82,7 +82,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  // Main Earnings Card
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -118,15 +117,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Recent Trips Header
                   const Text(
                     "Recent Completed Trips",
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-
-                  // Recent Trips List
                   if (_recentTrips.isEmpty)
                     const Center(
                       child: Text("No completed trips yet.", style: TextStyle(color: Colors.grey)),
@@ -150,8 +145,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
   }
 
   Widget _buildTripCard(dynamic trip) {
-    // Adjust these field names if your database uses different column names
-    final String pickup = trip['pickupLocation'] ?? 'Unknown Pickup';
     final String dropoff = trip['dropoffLocation'] ?? 'Unknown Dropoff';
     final double price = (trip['price'] ?? 0).toDouble();
     final String date = DateTime.parse(trip['createdAt']).toLocal().toString().substring(0, 16);
