@@ -25,7 +25,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final String apiUrl = 'https://torq-backend.onrender.com';
   final ImagePicker _picker = ImagePicker();
 
-  // Store selected files
   File? _idImage;
   File? _licenseImage;
   File? _bikeImage;
@@ -70,7 +69,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
     
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('\/riders/register'));
+      var request = http.MultipartRequest('POST', Uri.parse('$apiUrl/riders/register'));
       
       request.fields['name'] = _nameController.text.trim();
       request.fields['phone'] = _phoneController.text.trim();
@@ -97,17 +96,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           _isLoading = false;
         });
       } else {
-        debugPrint('Server error: \');
+        debugPrint('Server error: $responseData');
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Registration failed. Check console.")),
         );
       }
     } catch (e) {
-      debugPrint('Registration error: \');
+      debugPrint('Registration error: $e');
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: \")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
