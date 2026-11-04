@@ -60,7 +60,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Future<void> _submitRegistration() async {
-    // Basic validation
     if (_idImage == null || _licenseImage == null || _bikeImage == null || _passportImage == null || _insuranceImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please upload all required documents.")),
@@ -72,7 +71,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     
     try {
       // 1. Send text data and images to the backend
-      var request = http.MultipartRequest('POST', Uri.parse('$apiUrl/riders/register'));
+      var request = http.MultipartRequest('POST', Uri.parse('\/riders/register'));
       
       request.fields['name'] = _nameController.text.trim();
       request.fields['phone'] = _phoneController.text.trim();
@@ -80,16 +79,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       request.fields['plateNumber'] = _plateController.text.trim();
       request.fields['bikeModel'] = _modelController.text.trim();
 
-      // Attach images
+      // 2. Attach images safely
       request.files.add(await http.MultipartFile.fromPath('nationalId', _idImage!.path));
       request.files.add(await http.MultipartFile.fromPath('driversLicense', _licenseImage!.path));
       request.files.add(await http.MultipartFile.fromPath('bikePicture', _bikeImage!.path));
       request.files.add(await http.MultipartFile.fromPath('passportPhoto', _passportImage!.path));
       request.files.add(await http.MultipartFile.fromPath('insurance', _insuranceImage!.path));
 
-      var streamedResponse = await request.send().timeout(const Duration(seconds: 60), onTimeout: () { throw Exception('Server is waking up. Please try again.'); });
-      var response = streamedResponse;
-      var responseData = await response.stream.bytesToString();
+      // 3. Send with a timeout for Render free tier
+      var streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () => throw Exception('Server is waking up. Please try again.'),
+      );
+      var response = await http.Response.fromStream(streamedResponse);
+      var responseData = response.body;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() {
@@ -97,17 +100,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           _isLoading = false;
         });
       } else {
-        debugPrint('Server error: $responseData');
+        debugPrint('Server error: \');
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Registration failed. Check console.")),
         );
       }
     } catch (e) {
-      debugPrint('Registration error: $e');
+      debugPrint('Registration error: \');
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Network error. Check your connection.")),
+        SnackBar(content: Text("Error: \")),
       );
     }
   }
