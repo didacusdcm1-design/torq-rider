@@ -40,8 +40,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Future<void> _submitRegistration() async {
     setState(() => _isLoading = true);
     
-    // NOTE: In a real app, you would upload the ID/License images here first.
-    // For now, we are just sending the text data.
     try {
       final response = await http.post(
         Uri.parse('$apiUrl/riders/register'),
@@ -98,7 +96,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Progress Bar
                 LinearProgressIndicator(
                   value: (_currentStep + 1) / 3,
                   backgroundColor: const Color(0xFF1E1E1E),
@@ -118,7 +115,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
 
-                // Bottom Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -174,57 +170,63 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Widget _buildStep3() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Documents", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text("Upload your ID and Driver's License.", style: TextStyle(color: Colors.grey)),
-        const SizedBox(height: 24),
-        
-        // Placeholder for Image Uploads
-        GestureDetector(
-          onTap: () { /* Image Picker Logic */ },
-          child: Container(
-            width: double.infinity,
-            height: 120,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.upload_file, color: Color(0xFFFCD34D), size: 40),
-                SizedBox(height: 8),
-                Text("Upload National ID", style: TextStyle(color: Colors.white)),
-              ],
-            ),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Documents", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text("Upload the required documents and photos.", style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 24),
+          
+          // 2-Column Grid for uploads
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.0,
+            children: [
+              _buildUploadBox("National ID", Icons.badge),
+              _buildUploadBox("Driver's License", Icons.drive_eta),
+              _buildUploadBox("Bike Picture", Icons.motorcycle),
+              _buildUploadBox("Passport Photo", Icons.portrait),
+              _buildUploadBox("Insurance", Icons.shield),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadBox(String label, IconData icon) {
+    return GestureDetector(
+      onTap: () { 
+        // TODO: Image Picker Logic will go here
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("$label upload coming soon!")),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
         ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: () { /* Image Picker Logic */ },
-          child: Container(
-            width: double.infinity,
-            height: 120,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: const Color(0xFFFCD34D), size: 32),
+            const SizedBox(height: 8),
+            Text(
+              label, 
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
             ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.upload_file, color: Color(0xFFFCD34D), size: 40),
-                SizedBox(height: 8),
-                Text("Upload Driver's License", style: TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
