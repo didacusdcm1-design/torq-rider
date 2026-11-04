@@ -70,7 +70,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // 1. Send text data and images to the backend
       var request = http.MultipartRequest('POST', Uri.parse('\/riders/register'));
       
       request.fields['name'] = _nameController.text.trim();
@@ -79,14 +78,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       request.fields['plateNumber'] = _plateController.text.trim();
       request.fields['bikeModel'] = _modelController.text.trim();
 
-      // 2. Attach images safely
       request.files.add(await http.MultipartFile.fromPath('nationalId', _idImage!.path));
       request.files.add(await http.MultipartFile.fromPath('driversLicense', _licenseImage!.path));
       request.files.add(await http.MultipartFile.fromPath('bikePicture', _bikeImage!.path));
       request.files.add(await http.MultipartFile.fromPath('passportPhoto', _passportImage!.path));
       request.files.add(await http.MultipartFile.fromPath('insurance', _insuranceImage!.path));
 
-      // 3. Send with a timeout for Render free tier
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 60),
         onTimeout: () => throw Exception('Server is waking up. Please try again.'),
